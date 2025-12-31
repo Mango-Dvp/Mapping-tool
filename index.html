@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logic Studio | Bot Architect</title>
+    <title>Logic Studio | Discord Bot Architect</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -26,14 +26,14 @@
             color: #d4d4d8;
         }
 
-        /* Canvas Grid */
+        /* Canvas Layout */
         .canvas-container {
             width: 100vw;
             height: 100vh;
             position: relative;
             cursor: grab;
             overflow: hidden;
-            background-image: radial-gradient(#1e1e21 1.2px, transparent 1.2px);
+            background-image: radial-gradient(#1e1e21 1px, transparent 1px);
             background-size: 40px 40px;
         }
 
@@ -43,10 +43,11 @@
             position: absolute;
             transform-origin: 0 0;
             will-change: transform;
-            z-index: 1;
+            width: 1px;
+            height: 1px;
         }
 
-        /* Sleek Node Style */
+        /* Logic Nodes */
         .node {
             position: absolute;
             display: flex;
@@ -71,7 +72,8 @@
 
         .node-active {
             border-color: var(--accent);
-            box-shadow: 0 0 15px rgba(88, 101, 242, 0.3);
+            box-shadow: 0 0 15px rgba(88, 101, 242, 0.25);
+            z-index: 20;
         }
 
         .node-linking {
@@ -91,37 +93,39 @@
             right: -10px;
             background: var(--accent);
             color: white;
-            font-size: 10px;
-            font-weight: 700;
+            font-size: 9px;
+            font-weight: 800;
             width: 18px;
             height: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
-        /* Fixed Connector System */
+        /* Connection Lines */
         #svg-layer {
             position: absolute;
             top: 0;
             left: 0;
-            width: 1px;
-            height: 1px;
+            width: 100000px;
+            height: 100000px;
             pointer-events: none;
             overflow: visible;
-            z-index: 5;
+            z-index: 1;
         }
 
         .connector-line {
             fill: none;
-            stroke: rgba(88, 101, 242, 0.4);
+            stroke: var(--accent);
+            stroke-opacity: 0.4;
             stroke-width: 2.5;
             pointer-events: none;
             stroke-linecap: round;
         }
 
-        /* Glass Input Styling */
+        /* Glass Input UI */
         .glass-input {
             width: 100%;
             background: var(--glass-bg);
@@ -134,17 +138,18 @@
             outline: none;
             transition: all 0.2s ease;
             margin-bottom: 12px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .glass-input:focus {
             border-color: var(--accent);
             background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 15px rgba(88, 101, 242, 0.1);
+            box-shadow: 0 0 15px rgba(88, 101, 242, 0.1), inset 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        /* Sidebar & Navigation */
+        /* Panels */
         #sidebar {
-            width: 320px;
+            width: 300px;
             background: var(--sidebar-bg);
             border-right: 1px solid var(--border);
             z-index: 40;
@@ -156,7 +161,7 @@
             @apply flex items-center gap-3 w-full px-4 py-2 rounded-xl transition-all text-left text-zinc-500 hover:text-zinc-100 hover:bg-white/5 text-[11px] font-semibold;
         }
 
-        .side-title { @apply text-[10px] font-bold uppercase text-zinc-600 tracking-widest mt-8 mb-2 px-4 border-b border-white/5 pb-2 flex justify-between items-center; }
+        .side-title { @apply text-[10px] font-bold uppercase text-zinc-600 tracking-widest mt-6 mb-2 px-4 border-b border-white/5 pb-2 flex justify-between items-center; }
 
         .modal-overlay {
             background: rgba(0, 0, 0, 0.85);
@@ -178,10 +183,10 @@
         <div class="max-w-6xl mx-auto">
             <header class="flex justify-between items-center mb-16">
                 <div>
-                    <h2 class="text-4xl font-bold text-white tracking-tight">Studio projects</h2>
-                    <p class="text-zinc-500 text-lg mt-1">Select a workspace to start architecting your bot.</p>
+                    <h2 class="text-3xl font-bold text-white tracking-tight">Studio projects</h2>
+                    <p class="text-zinc-500 text-lg mt-1">Select a workspace to start architecting.</p>
                 </div>
-                <button onclick="newProjectFlow()" class="bg-indigo-600 text-white px-10 py-3 rounded-xl font-semibold text-sm hover:bg-indigo-500 transition-all shadow-xl">
+                <button onclick="newProjectFlow()" class="bg-indigo-600 text-white px-10 py-3 rounded-xl font-semibold text-sm hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-900/20">
                     New build
                 </button>
             </header>
@@ -197,7 +202,7 @@
                     <i data-lucide="home" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <h1 id="active-project-name" class="text-sm font-semibold text-zinc-100 truncate max-w-[250px]">Project flow</h1>
+                    <h1 id="active-project-name" class="text-sm font-semibold text-zinc-100 truncate max-w-[250px]">Project</h1>
                     <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">Logic studio v10</p>
                 </div>
             </button>
@@ -210,25 +215,25 @@
                 <div class="w-[1px] h-6 bg-zinc-800 mx-1"></div>
                 <button onclick="toggleImportModal()" class="flex items-center gap-3 px-5 py-2 hover:bg-white/5 rounded-lg transition-all text-xs font-bold text-zinc-400">
                     <i data-lucide="terminal" class="w-4 h-4 text-zinc-400"></i>
-                    <span>Sync manifest</span>
+                    <span>Import JSON</span>
                 </button>
                 <button onclick="resetView()" class="p-2.5 hover:bg-white/5 rounded-lg text-zinc-500"><i data-lucide="maximize" class="w-4 h-4"></i></button>
             </div>
         </div>
 
         <div class="flex items-center gap-6">
-            <div id="linking-toast" class="hidden flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[11px] font-bold shadow-lg animate-pulse">
-                <i data-lucide="link" class="w-4 h-4"></i> Linking mode active
+            <div id="linking-toast" class="hidden flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded text-[11px] font-bold shadow-lg animate-pulse">
+                <i data-lucide="link" class="w-4 h-4"></i> Linking sequence active
             </div>
 
             <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg p-0.5">
                 <button onclick="zoomCanvas(0.8)" class="p-2 hover:bg-zinc-800 rounded text-zinc-500"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
-                <span id="zoom-label" class="text-[11px] font-bold px-2 w-12 text-center text-zinc-400">100%</span>
-                <button onclick="zoomCanvas(1.2)" class="p-1.5 hover:bg-zinc-800 rounded text-zinc-500"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+                <span id="zoom-label" class="text-[11px] font-bold px-4 w-12 text-center text-zinc-400">100%</span>
+                <button onclick="zoomCanvas(1.2)" class="p-2 hover:bg-zinc-800 rounded text-zinc-500"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
             </div>
             
-            <button onclick="showExportModal()" class="flex items-center gap-2 px-6 py-2 bg-white text-black text-xs font-bold rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-xl">
-                Export manifest
+            <button onclick="showExportModal()" class="flex items-center gap-3 px-6 py-2 bg-white text-black text-xs font-bold rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-xl">
+                Export
             </button>
         </div>
     </nav>
@@ -236,8 +241,8 @@
     <!-- SIDEBAR -->
     <aside id="sidebar" class="fixed left-0 top-16 bottom-0 flex flex-col overflow-hidden">
         <div class="p-6 pb-2">
-            <input type="text" id="element-search" placeholder="Search modules..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3 text-xs outline-none focus:border-indigo-600 transition-all text-zinc-100" oninput="filterElements()">
-            <button onclick="toggleCustomModal()" class="w-full mt-3 py-3 border border-zinc-800 text-zinc-500 rounded-xl text-[10px] font-bold hover:text-white hover:bg-white/5 transition-all">
+            <input type="text" id="element-search" placeholder="Filter modules..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3 text-xs outline-none focus:border-indigo-600 transition-all text-zinc-100" oninput="filterElements()">
+            <button onclick="toggleCustomModal()" class="w-full mt-3 py-3 border border-zinc-800 text-zinc-600 rounded-xl text-[10px] font-bold hover:text-white hover:bg-white/5 transition-all">
                 + Register custom unit
             </button>
         </div>
@@ -261,7 +266,7 @@
             <button onclick="closeEditor()" class="p-2 hover:bg-white/5 rounded-full text-zinc-600"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
         
-        <div id="editor-fields" class="space-y-6 overflow-y-auto thin-scroll max-h-[calc(100vh-450px)] pr-2">
+        <div id="editor-fields" class="space-y-4 overflow-y-auto thin-scroll max-h-[calc(100vh-450px)] pr-2">
             <!-- Dynamic glassy inputs -->
         </div>
 
@@ -270,7 +275,7 @@
         </div>
 
         <div class="absolute bottom-10 left-10 right-10 flex flex-col gap-4">
-            <button onclick="closeEditor()" class="w-full py-4 bg-white text-black rounded-2xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-xl">Apply changes</button>
+            <button onclick="closeEditor()" class="w-full py-5 bg-white text-black rounded-2xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-xl">Apply changes</button>
             <button onclick="deleteSelectedNode()" class="w-full py-2 text-zinc-700 text-[11px] font-bold hover:text-red-500 transition-all uppercase tracking-widest">Delete module</button>
         </div>
     </aside>
@@ -278,10 +283,11 @@
     <!-- CANVAS -->
     <main id="canvas-container" class="canvas-container" onmousedown="handleCanvasDown(event)" onwheel="handleWheel(event)" ondblclick="handleCanvasDblClick(event)">
         <div id="canvas-content" class="canvas-content">
+            <!-- SVG now inside the canvas content so it moves with nodes -->
             <svg id="svg-layer">
                 <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orientation="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#5865f2" /></marker></defs>
             </svg>
-            <div id="nodes-container" style="position: relative; z-index: 2;"></div>
+            <div id="nodes-container"></div>
         </div>
     </main>
 
@@ -302,7 +308,7 @@
 
     <div id="import-modal" class="fixed inset-0 z-[100] modal-overlay hidden flex items-center justify-center p-6" onclick="if(event.target === this) toggleImportModal()">
         <div class="bg-zinc-900 w-full max-w-xl rounded-[48px] border border-zinc-800 p-16 shadow-2xl">
-            <h2 class="text-3xl font-bold mb-8 text-white tracking-tight">Sync project</h2>
+            <h2 class="text-3xl font-bold mb-8 text-white tracking-tight">Sync manifest</h2>
             <p class="text-sm text-zinc-500 mb-10">Paste build JSON to restore the workspace logic tree.</p>
             <textarea id="import-text" rows="8" placeholder='{"nodes": [...]}' class="glass-input h-72 font-mono text-indigo-400"></textarea>
             <div class="flex gap-6 mt-4">
@@ -338,30 +344,31 @@
         // --- Catalog Data ---
         const CATALOG = {
             'Triggers': [
-                { id: 'ev_msg', icon: 'message-square', title: 'On Message' }, { id: 'ev_slash', icon: 'terminal', title: 'Slash Command' },
-                { id: 'ev_join', icon: 'user-plus', title: 'User Join' }, { id: 'ev_leave', icon: 'user-minus', title: 'User Leave' },
-                { id: 'ev_react', icon: 'smile', title: 'Reaction' }, { id: 'ev_ready', icon: 'power', title: 'Bot Ready' },
-                { id: 'ev_cron', icon: 'clock', title: 'Interval' }, { id: 'ev_voice', icon: 'mic', title: 'Voice join' }
+                { id: 'ev_msg', icon: 'message-square', title: 'On message' }, { id: 'ev_slash', icon: 'terminal', title: 'Slash command' },
+                { id: 'ev_join', icon: 'user-plus', title: 'User join' }, { id: 'ev_leave', icon: 'user-minus', title: 'User leave' },
+                { id: 'ev_react', icon: 'smile', title: 'Reaction add' }, { id: 'ev_ready', icon: 'power', title: 'Bot ready' },
+                { id: 'ev_cron', icon: 'clock', title: 'Cron job' }, { id: 'ev_voice', icon: 'mic', title: 'Voice status' }
             ],
             'Interaction': [
                 { id: 'act_send', icon: 'send', title: 'Send msg' }, { id: 'act_reply', icon: 'corner-up-left', title: 'Reply' },
                 { id: 'act_embed', icon: 'layout', title: 'Build embed' }, { id: 'act_dm', icon: 'mail', title: 'Direct msg' },
-                { id: 'act_btn', icon: 'mouse-pointer-2', title: 'Button' }, { id: 'act_modal', icon: 'columns', title: 'Show modal' }
+                { id: 'act_btn', icon: 'mouse-pointer-2', title: 'Button' }, { id: 'act_modal', icon: 'columns', title: 'Modal' }
             ],
             'Moderation': [
                 { id: 'mod_kick', icon: 'user-x', title: 'Kick user' }, { id: 'mod_ban', icon: 'lock', title: 'Ban user' },
                 { id: 'mod_timeout', icon: 'clock', title: 'Set timeout' }, { id: 'mod_purge', icon: 'trash-2', title: 'Purge chat' },
                 { id: 'mod_warn', icon: 'alert-triangle', title: 'Issue warn' }, { id: 'mod_nick', icon: 'type', title: 'Set nick' }
             ],
-            'System': [
+            'Logic': [
                 { id: 'l_if', icon: 'split', title: 'Condition' }, { id: 'l_loop', icon: 'rotate-cw', title: 'Iteration' },
                 { id: 'l_var', icon: 'box', title: 'Set variable' }, { id: 'l_wait', icon: 'hourglass', title: 'Set delay' },
-                { id: 'f_get', icon: 'server', title: 'Fetch API' }, { id: 'f_db', icon: 'database', title: 'Database' }
+                { id: 'f_get', icon: 'server', title: 'Fetch API' }, { id: 'f_db', icon: 'database', title: 'SQL access' }
             ],
             'Custom Modules': []
         };
 
-        let projects = JSON.parse(localStorage.getItem('am_studio_v19') || '{}');
+        // --- System State ---
+        let projects = JSON.parse(localStorage.getItem('am_studio_manifest_v20') || '{}');
         let currentProjectId = localStorage.getItem('am_active_id') || 'default';
         let nodes = [];
         let connections = [];
@@ -383,12 +390,13 @@
             initColorPalette();
             filterElements(); 
             if (Object.keys(projects).length === 0) {
-                projects['default'] = { name: 'Main workspace', nodes: [], connections: [], transform: { x: window.innerWidth/2, y: 150, scale: 1 }, updated: Date.now() };
+                projects['default'] = { name: 'New workspace', nodes: [], connections: [], transform: { x: window.innerWidth/2, y: 150, scale: 1 }, updated: Date.now() };
             }
             loadProject(currentProjectId);
             window.addEventListener('keydown', handleGlobalKeys);
         };
 
+        // --- UI Operations ---
         function closeEditor() { 
             selectedId = null; 
             document.getElementById('node-editor').style.transform = 'translateX(500px)'; 
@@ -456,8 +464,8 @@
             editor.innerHTML = '';
             if (node) {
                 const fields = [
-                    { label: 'Display name', key: 'title', type: 'text' },
-                    { label: 'Logic description', key: 'logic', type: 'textarea' }
+                    { label: 'Unit label', key: 'title', type: 'text' },
+                    { label: 'Unit logic/desc', key: 'logic', type: 'textarea' }
                 ];
                 fields.forEach(f => {
                     const wrap = document.createElement('div');
@@ -481,6 +489,7 @@
             renderNodes();
         }
 
+        // --- System Logic ---
         function loadProject(id) {
             currentProjectId = id;
             localStorage.setItem('am_active_id', id);
@@ -506,7 +515,7 @@
                 const card = document.createElement('div');
                 card.className = "bg-zinc-900 p-12 rounded-[50px] border border-zinc-800 hover:border-indigo-500 transition-all cursor-pointer group shadow-2xl";
                 card.onclick = () => loadProject(id);
-                card.innerHTML = `<div class="flex justify-between items-start mb-8"><div class="p-5 bg-zinc-800 rounded-2xl group-hover:bg-indigo-600 transition-all text-zinc-600 group-hover:text-white"><i data-lucide="folder" class="w-10 h-10"></i></div><button onclick="event.stopPropagation(); deleteProject('${id}')" class="text-zinc-800 hover:text-red-500"><i data-lucide="trash-2" class="w-6 h-6"></i></button></div><h4 class="text-3xl font-bold text-white italic">${p.name}</h4><p class="text-[11px] text-zinc-700 uppercase mt-4 tracking-[0.4em] font-bold">${p.nodes.length} logic units</p>`;
+                card.innerHTML = `<div class="flex justify-between items-start mb-8"><div class="p-5 bg-zinc-800 rounded-2xl group-hover:bg-indigo-600 transition-all text-zinc-600 group-hover:text-white"><i data-lucide="folder" class="w-10 h-10"></i></div><button onclick="event.stopPropagation(); deleteProject('${id}')" class="text-zinc-800 hover:text-red-500"><i data-lucide="trash-2" class="w-6 h-6"></i></button></div><h4 class="text-3xl font-bold text-white italic">${p.name}</h4><p class="text-[11px] text-zinc-700 uppercase mt-4 tracking-[0.4em] font-bold">${p.nodes.length} units saved</p>`;
                 grid.appendChild(card);
             });
             document.getElementById('dashboard-view').classList.remove('hidden');
@@ -514,7 +523,7 @@
         }
 
         function newProjectFlow() {
-            const name = prompt("Project identifier:", "Build_x");
+            const name = prompt("Name your build:", "Bot logic v1");
             if (name) {
                 const id = 'p_' + Date.now();
                 projects[id] = { name, nodes: [], connections: [], transform: { x: window.innerWidth/2, y: 150, scale: 1 }, updated: Date.now() };
@@ -523,8 +532,8 @@
         }
 
         function deleteProject(id) {
-            if (id === 'default') return alert("Protected Root.");
-            if(confirm("Hard delete project data?")) {
+            if (id === 'default') return alert("Main workspace is protected.");
+            if(confirm("Confirm hard delete?")) {
                 delete projects[id];
                 localStorage.setItem('am_studio_v19', JSON.stringify(projects));
                 if (currentProjectId === id) currentProjectId = 'default';
@@ -585,13 +594,12 @@
         function renderConnections() {
             const svg = document.getElementById('svg-layer');
             if (!svg) return;
-            // Draw lines with a brighter indigo for visibility
+            // Draw relative indigo lines
             svg.innerHTML = `<defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orientation="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#5865f2" /></marker></defs>`;
             connections.forEach(c => {
                 const f = nodes.find(n => n.id === c.from), t = nodes.find(n => n.id === c.to);
                 if (f && t) {
-                    const offset = 100000;
-                    const x1 = f.x + 90 + offset, y1 = f.y + 19 + offset, x2 = t.x + 90 + offset, y2 = t.y + offset;
+                    const x1 = f.x + 90, y1 = f.y + 19, x2 = t.x + 90, y2 = t.y;
                     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                     const cpY = (y1 + y2) / 2;
                     path.setAttribute("d", `M ${x1} ${y1} C ${x1} ${cpY}, ${x2} ${cpY}, ${x2} ${y2}`);
@@ -618,7 +626,7 @@
         function onCanvasPan(e) { if (!isPanning) return; transform.x = e.clientX - startPos.x; transform.y = e.clientY - startPos.y; updateCanvasTransform(); }
         function startNodeDrag(id, e) { dragId = id; const n = nodes.find(n => n.id === id); dragOffset = { x: e.clientX/transform.scale - n.x, y: e.clientY/transform.scale - n.y }; window.addEventListener('mousemove', onNodeDrag); window.addEventListener('mouseup', () => { dragId = null; autoSave(); }); }
         function onNodeDrag(e) { if (!dragId) return; const n = nodes.find(n => n.id === dragId); n.x = e.clientX/transform.scale - dragOffset.x; n.y = e.clientY/transform.scale - dragOffset.y; const el = document.getElementById(dragId); if(el) { el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; renderConnections(); } }
-        function handleCanvasDblClick(e) { if(e.target.closest('.node')) return; addNode('ev_ready', 'power', 'Init_Unit'); }
+        function handleCanvasDblClick(e) { if(e.target.closest('.node')) return; addNode('ev_ready', 'power', 'Init_logic'); }
         function resetView() { transform = { x: window.innerWidth / 2, y: 150, scale: 1 }; updateCanvasTransform(); }
 
         function spacizeLayout() {
@@ -640,11 +648,11 @@
         }
 
         function generateFlowText() {
-            let out = "STUDIO_BUILD_MANIFEST\n\n";
+            let out = "LOGIC_MANIFEST_DOC\n\n";
             nodes.forEach((n, i) => {
                 const targets = connections.filter(c => c.from === n.id).map(c => nodes.find(x => x.id === c.to)?.title);
-                const desc = n.props?.logic || node.description || "No logic defined.";
-                out += `[${i + 1}] ${n.type.toUpperCase()} "${n.title}"\nLogic: ${desc}\n`;
+                const desc = n.props?.logic || "No configuration defined.";
+                out += `[${i + 1}] ${n.type.toUpperCase()} "${n.title}"\nLogic:\n  ${desc}\n`;
                 if(targets.length) out += `Flows to: ${targets.join(' → ')}\n`;
                 out += `\n`;
             });
@@ -657,35 +665,31 @@
                 const d = JSON.parse(raw);
                 const nodesToLoad = d.nodes || [];
                 const connsToLoad = d.connections || [];
-                // Map description to logic prop
                 nodesToLoad.forEach(node => {
                     if (!node.props) node.props = {};
                     if (node.description && !node.props.logic) node.props.logic = node.description;
                 });
                 nodes = nodesToLoad; connections = connsToLoad;
                 resetView(); renderNodes(); renderConnections(); toggleImportModal(); autoSave();
-            } catch(e) { alert("Import error."); }
+            } catch(e) { alert("Data error."); }
         }
 
         function downloadJSON() {
-            const b = new Blob([JSON.stringify({
-                header: "GUIDE: registerCustomElement('Category', 'id', 'icon', 'Title')",
-                nodes, 
-                connections
-            }, null, 2)], {type:'application/json'});
+            const b = new Blob([JSON.stringify({ header: "GUIDE: registerCustomElement('Category', 'id', 'icon', 'Title')", nodes, connections }, null, 2)], {type:'application/json'});
             const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'build.json'; a.click();
         }
 
         function copyFlowText() {
             const t = generateFlowText(); const el = document.createElement("textarea"); el.value = t;
             document.body.appendChild(el); el.select();
-            document.execCommand('copy'); alert("Manifest copied."); document.body.removeChild(el);
+            document.execCommand('copy'); alert("Copied to clipboard."); document.body.removeChild(el);
         }
 
         function initSidebarResize() {
             const sidebar = document.getElementById('sidebar');
-            const resizer = document.getElementById('sidebar-resizer');
-            if(!resizer) return;
+            const resizer = document.createElement('div');
+            resizer.className = "absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-indigo-500 transition-colors z-50";
+            sidebar.appendChild(resizer);
             let resizing = false;
             resizer.onmousedown = () => resizing = true;
             window.onmousemove = (e) => { if(resizing && e.clientX > 100 && e.clientX < 500) sidebar.style.width = e.clientX + 'px'; };
