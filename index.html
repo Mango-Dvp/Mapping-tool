@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ActionMapper Studio | Logic Architect Pro</title>
+    <title>Logic Studio | Bot Architect</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
         :root {
-            --bg-canvas: #020202;
-            --grid-color: #0d0d0f;
-            --sidebar-bg: #08080a;
-            --node-bg: #111114;
-            --accent: #3b82f6;
-            --border: #1a1a1e;
+            --bg-canvas: #09090b;
+            --sidebar-bg: #0c0c0e;
+            --node-bg: #18181b;
+            --accent: #5865f2; 
+            --border: #27272a;
+            --input-bg: rgba(255, 255, 255, 0.03);
+            --input-border: rgba(255, 255, 255, 0.08);
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             overflow: hidden;
             background-color: var(--bg-canvas);
-            color: #f4f4f5;
+            color: #d4d4d8;
         }
 
         /* Canvas Grid */
@@ -32,10 +33,8 @@
             position: relative;
             cursor: grab;
             overflow: hidden;
-            background-image: 
-                linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
-                linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
-            background-size: 60px 60px;
+            background-image: radial-gradient(#1e1e21 1px, transparent 1px);
+            background-size: 40px 40px;
         }
 
         .canvas-container:active { cursor: grabbing; }
@@ -47,7 +46,7 @@
             z-index: 1;
         }
 
-        /* Node Aesthetic */
+        /* Sleek Node Style */
         .node {
             position: absolute;
             display: flex;
@@ -57,28 +56,27 @@
             background: var(--node-bg);
             border-radius: 8px;
             border: 1px solid var(--border);
-            transition: transform 0.1s linear, border-color 0.2s, box-shadow 0.2s;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.8);
-            min-width: 200px;
+            transition: transform 0.1s ease, border-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            min-width: 180px;
             user-select: none;
             cursor: pointer;
             z-index: 10;
         }
 
         .node:hover {
-            transform: translateY(-2px);
-            border-color: #3f3f46;
-            background: #18181c;
+            border-color: #52525b;
+            background: #1c1c21;
         }
 
         .node-active {
             border-color: var(--accent);
-            box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.25);
+            box-shadow: 0 0 15px rgba(88, 101, 242, 0.15);
         }
 
         .node-linking {
             border-color: var(--accent);
-            background: #091e42;
+            background: #1e1b4b;
             animation: pulse-node 1.5s infinite;
         }
 
@@ -94,27 +92,86 @@
             background: var(--accent);
             color: white;
             font-size: 10px;
-            font-weight: 900;
-            padding: 2px 6px;
-            border-radius: 4px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            font-weight: 700;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+
+        /* Logic Connections Viewport Fix */
+        #svg-layer {
+            position: absolute;
+            top: -100000px;
+            left: -100000px;
+            width: 200000px;
+            height: 200000px;
+            pointer-events: none;
+            overflow: visible;
         }
 
         .connector-line {
             fill: none;
-            stroke: #222226;
+            stroke: #27272a;
             stroke-width: 2.5;
             pointer-events: none;
             stroke-linecap: round;
         }
 
-        /* Resizable Sidebar */
+        /* Custom Glass Inputs */
+        .glass-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+        }
+
+        .glass-input:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Sidebar & Layout */
         #sidebar {
-            width: 360px;
-            min-width: 100px;
-            max-width: 600px;
+            width: 320px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
             transition: transform 0.3s ease;
         }
+
+        #sidebar.minimized {
+            transform: translateX(-240px);
+        }
+
+        .side-btn {
+            @apply flex items-center gap-3 w-full px-4 py-2.5 rounded-xl transition-all text-left text-zinc-500 hover:text-zinc-100 hover:bg-white/5 text-[11px] font-semibold;
+        }
+
+        .side-title { @apply text-[10px] font-bold uppercase text-zinc-600 tracking-widest mt-6 mb-2 px-4 border-b border-white/5 pb-2 flex justify-between items-center; }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(12px);
+        }
+
+        kbd {
+            @apply px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-[10px] text-zinc-500 mx-0.5 shadow-sm;
+        }
+
+        .thin-scroll::-webkit-scrollbar { width: 4px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
 
         .resizer {
             width: 4px;
@@ -123,242 +180,208 @@
             position: absolute;
             right: 0;
             top: 0;
-            transition: background 0.2s;
-            z-index: 100;
+            z-index: 50;
         }
         .resizer:hover { background: var(--accent); }
-
-        .side-btn {
-            @apply flex flex-col items-center justify-center gap-2 p-3 rounded-xl transition-all text-center text-zinc-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-zinc-800;
-        }
-
-        .side-btn i { @apply w-4 h-4; }
-        .side-btn span { @apply text-[8px] font-bold uppercase tracking-tight opacity-80 leading-tight text-center break-words; }
-
-        .side-title { @apply text-[10px] font-black uppercase text-zinc-700 tracking-[0.3em] mt-8 mb-4 px-4 border-b border-zinc-900 pb-2 flex justify-between items-center; }
-
-        .modal-overlay {
-            background: rgba(0, 0, 0, 0.98);
-            backdrop-filter: blur(30px);
-        }
-
-        kbd {
-            @apply px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[9px] font-bold text-zinc-600 mx-0.5;
-        }
-
-        .thin-scroll::-webkit-scrollbar { width: 3px; }
-        .thin-scroll::-webkit-scrollbar-track { background: transparent; }
-        .thin-scroll::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
-        
-        .search-input {
-            @apply w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-blue-600 transition-all text-zinc-400 mb-4;
-        }
-
-        .prop-input {
-            @apply w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg outline-none font-bold text-xs text-white focus:border-blue-600 transition-all mb-4;
-        }
     </style>
 </head>
-<body class="text-zinc-300">
+<body class="text-zinc-400">
 
     <!-- DASHBOARD -->
-    <div id="dashboard-view" class="fixed inset-0 z-[100] bg-black overflow-y-auto p-12 hidden">
+    <div id="dashboard-view" class="fixed inset-0 z-[100] bg-zinc-950 overflow-y-auto p-12 hidden">
         <div class="max-w-6xl mx-auto">
-            <header class="flex justify-between items-center mb-20">
+            <header class="flex justify-between items-center mb-16">
                 <div>
-                    <h2 class="text-6xl font-black tracking-tighter text-white uppercase italic">Logic Studio</h2>
-                    <p class="text-zinc-600 font-medium text-xl mt-2 tracking-tight">Enterprise Design Vault</p>
+                    <h2 class="text-4xl font-bold text-white tracking-tight">Studio projects</h2>
+                    <p class="text-zinc-500 text-lg mt-2">Manage your automated logic manifests.</p>
                 </div>
-                <button onclick="newProjectFlow()" class="bg-blue-600 text-white px-12 py-5 rounded-2xl font-black text-xs hover:bg-blue-500 transition-all uppercase tracking-[0.2em] shadow-2xl">
-                    + INITIALIZE WORKSPACE
+                <button onclick="newProjectFlow()" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold text-sm hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-900/20">
+                    Initialize new build
                 </button>
             </header>
-            <div id="projects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10"></div>
+            <div id="projects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
         </div>
     </div>
 
     <!-- TOP NAVIGATION -->
-    <nav class="fixed top-0 left-0 right-0 h-16 bg-zinc-950/95 backdrop-blur-3xl border-b border-zinc-900 flex items-center justify-between px-8 z-50">
-        <div class="flex items-center gap-10">
+    <nav class="fixed top-0 left-0 right-0 h-16 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-900 flex items-center justify-between px-8 z-50">
+        <div class="flex items-center gap-8">
             <button onclick="goToHome()" class="flex items-center gap-4 group">
-                <div class="bg-white text-black p-1.5 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-all shadow-xl">
-                    <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                <div class="bg-white text-black p-2 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-lg">
+                    <i data-lucide="layout-grid" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h1 id="active-project-name" class="text-xs font-black tracking-[0.3em] uppercase truncate max-w-[250px]">Manifest_Core.log</h1>
-                    <p class="text-[7px] text-zinc-700 font-black uppercase tracking-widest">Logic Studio v8.0</p>
+                    <h1 id="active-project-name" class="text-sm font-bold text-zinc-100 truncate max-w-[250px]">Workspace</h1>
+                    <p class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">Logic studio v10</p>
                 </div>
             </button>
             
-            <div class="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-900">
-                <button onclick="spacizeLayout()" class="flex items-center gap-2 px-5 py-1.5 hover:bg-white/5 rounded-lg transition-all text-blue-500 font-black text-[9px] tracking-[0.2em]">
-                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                    <span>SPACIZE</span>
+            <div class="flex items-center gap-2 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800">
+                <button onclick="spacizeLayout()" class="flex items-center gap-3 px-5 py-2 hover:bg-white/5 rounded-lg transition-all text-xs font-bold text-zinc-400">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-blue-500"></i>
+                    <span>Spacize layout</span>
                 </button>
-                <div class="w-[1px] h-4 bg-zinc-800 mx-2"></div>
-                <button onclick="toggleImportModal()" class="flex items-center gap-2 px-5 py-1.5 hover:bg-white/5 rounded-lg transition-all text-zinc-500 hover:text-white font-black text-[9px] tracking-[0.2em]">
-                    <i data-lucide="terminal" class="w-3.5 h-3.5"></i>
-                    <span>IMPORT</span>
+                <div class="w-[1px] h-6 bg-zinc-800 mx-1"></div>
+                <button onclick="toggleImportModal()" class="flex items-center gap-3 px-5 py-2 hover:bg-white/5 rounded-lg transition-all text-xs font-bold text-zinc-400">
+                    <i data-lucide="terminal" class="w-4 h-4"></i>
+                    <span>Sync manifest</span>
                 </button>
-                <button onclick="resetView()" class="p-1.5 hover:bg-white/5 rounded-lg text-zinc-500"><i data-lucide="home" class="w-3.5 h-3.5"></i></button>
+                <button onclick="resetView()" class="p-2.5 hover:bg-white/5 rounded-lg text-zinc-500"><i data-lucide="maximize" class="w-4 h-4"></i></button>
             </div>
         </div>
 
         <div class="flex items-center gap-6">
-            <div id="linking-toast" class="hidden flex items-center gap-3 px-5 py-2 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-[0.3em] shadow-2xl animate-pulse">
-                <i data-lucide="link" class="w-3.5 h-3.5"></i> BATCH LINK
+            <div id="linking-toast" class="hidden flex items-center gap-3 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[11px] font-bold shadow-lg animate-pulse">
+                <i data-lucide="link" class="w-4 h-4"></i> Linking sequence active
             </div>
 
-            <div class="flex items-center bg-zinc-900 border border-zinc-900 rounded-lg p-0.5">
-                <button onclick="zoomCanvas(0.8)" class="p-2 hover:bg-zinc-800 rounded-md text-zinc-500"><i data-lucide="minus" class="w-3 h-3"></i></button>
-                <span id="zoom-label" class="text-[9px] font-black px-3 w-12 text-center text-zinc-600">100%</span>
-                <button onclick="zoomCanvas(1.2)" class="p-2 hover:bg-zinc-800 rounded-md text-zinc-500"><i data-lucide="plus" class="w-3 h-3"></i></button>
+            <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl p-1 shadow-inner">
+                <button onclick="zoomCanvas(0.8)" class="p-2 hover:bg-zinc-800 rounded text-zinc-500 transition-all"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                <span id="zoom-label" class="text-[11px] font-bold px-4 w-16 text-center text-zinc-400">100%</span>
+                <button onclick="zoomCanvas(1.2)" class="p-2 hover:bg-zinc-800 rounded text-zinc-500 transition-all"><i data-lucide="plus" class="w-4 h-4"></i></button>
             </div>
             
-            <button onclick="showExportModal()" class="flex items-center gap-3 px-6 py-2 bg-white text-black text-[9px] font-black rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-xl">
-                <i data-lucide="share" class="w-3.5 h-3.5"></i> EXPORT
+            <button onclick="showExportModal()" class="flex items-center gap-3 px-8 py-3 bg-white text-black text-xs font-bold rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-xl">
+                <i data-lucide="share" class="w-4 h-4"></i>
+                Export manifest
             </button>
         </div>
     </nav>
 
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="fixed left-6 top-20 bottom-6 bg-zinc-950 border border-zinc-900 rounded-[24px] shadow-2xl z-40 flex flex-col overflow-hidden">
+    <aside id="sidebar" class="fixed left-0 top-16 bottom-0 flex flex-col overflow-hidden">
         <div class="p-6 pb-2">
-            <input type="text" id="element-search" placeholder="Search 250+ elements..." class="search-input" oninput="filterElements()">
+            <input type="text" id="element-search" placeholder="Filter logic units..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-3 text-xs outline-none focus:border-indigo-600 transition-all text-zinc-100" oninput="filterElements()">
+            <button onclick="toggleCustomModal()" class="w-full mt-3 py-3 border border-zinc-800 text-zinc-500 rounded-xl text-[10px] font-bold hover:text-white hover:bg-white/5 transition-all">
+                + Register custom unit
+            </button>
         </div>
         
-        <div id="sidebar-content" class="flex-1 overflow-y-auto thin-scroll p-4">
-            <!-- Populated by JS -->
+        <div id="sidebar-content" class="flex-1 overflow-y-auto thin-scroll p-4 pt-0">
+            <!-- Populated by script -->
         </div>
         
-        <div class="mt-auto p-4 bg-black/40 border-t border-zinc-900">
-            <div class="text-[7px] text-zinc-800 font-black uppercase tracking-[0.2em] space-y-1 opacity-50">
-                <div class="flex justify-between items-center"><span>LINK</span><kbd>CTRL SHIFT H</kbd></div>
-                <div class="flex justify-between items-center"><span>SAVE</span><kbd>ENTER</kbd></div>
+        <div class="mt-auto p-6 border-t border-zinc-900 bg-black/40">
+            <button onclick="toggleSidebar()" class="w-full py-2 hover:bg-white/5 rounded-lg text-zinc-600 mb-4 flex justify-center">
+                <i id="sidebar-icon" data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <div class="text-[9px] text-zinc-700 font-bold uppercase tracking-widest space-y-2 opacity-50">
+                <div class="flex justify-between items-center"><span>Link mode</span><kbd>Ctrl Shift H</kbd></div>
+                <div class="flex justify-between items-center"><span>Confirm</span><kbd>Enter</kbd></div>
             </div>
         </div>
         <div class="resizer" id="sidebar-resizer"></div>
     </aside>
 
     <!-- PROPERTIES PANEL -->
-    <aside id="node-editor" class="fixed right-6 top-20 bottom-6 w-80 bg-zinc-950 border border-zinc-900 rounded-[24px] shadow-2xl p-8 z-40 translate-x-[450px] transition-transform duration-500">
+    <aside id="node-editor" class="fixed right-8 top-24 bottom-8 w-96 bg-zinc-900 border border-zinc-800 rounded-[32px] shadow-2xl p-10 z-40 translate-x-[500px] transition-transform duration-500">
         <div class="flex justify-between items-center mb-10">
-            <h3 class="text-[9px] font-black uppercase tracking-[0.5em] text-zinc-700 italic">Configuration</h3>
-            <button onclick="closeEditor()" class="p-2 hover:bg-zinc-900 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4 text-zinc-700"></i></button>
+            <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500">Node parameters</h3>
+            <button onclick="closeEditor()" class="p-2 hover:bg-white/5 rounded-full text-zinc-600"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
         
-        <div id="editor-fields" class="space-y-0 overflow-y-auto thin-scroll max-h-[calc(100vh-320px)]">
-            <!-- Dynamic fields go here -->
+        <div id="editor-fields" class="space-y-4 overflow-y-auto thin-scroll max-h-[calc(100vh-450px)] pr-2">
+            <!-- Dynamic glass inputs -->
         </div>
 
-        <div class="mt-8 border-t border-zinc-900 pt-8">
-             <label class="text-[9px] font-black text-zinc-800 uppercase mb-3 block tracking-widest">Theme Color</label>
-             <div id="color-picker" class="flex gap-2 flex-wrap mb-10"></div>
+        <div class="mt-8 border-t border-zinc-800 pt-8">
+             <div id="color-picker" class="flex gap-3 flex-wrap mb-8"></div>
         </div>
 
         <div class="absolute bottom-10 left-10 right-10 flex flex-col gap-4">
-            <button onclick="closeEditor()" class="w-full py-4 bg-white text-black rounded-lg text-[9px] font-black uppercase tracking-[0.2em] hover:bg-blue-600 hover:text-white transition-all shadow-xl">Apply Sync</button>
-            <button onclick="deleteSelectedNode()" class="w-full py-2 text-zinc-800 text-[9px] font-black hover:text-red-500 transition-all uppercase tracking-widest">Wipe Node</button>
+            <button onclick="closeEditor()" class="w-full py-5 bg-white text-black rounded-2xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-xl">Apply changes</button>
+            <button onclick="deleteSelectedNode()" class="w-full py-2 text-zinc-700 text-[11px] font-bold hover:text-red-500 transition-all uppercase tracking-widest">Destroy node</button>
         </div>
     </aside>
 
     <!-- CANVAS -->
     <main id="canvas-container" class="canvas-container" onmousedown="handleCanvasDown(event)" onwheel="handleWheel(event)" ondblclick="handleCanvasDblClick(event)">
         <div id="canvas-content" class="canvas-content">
-            <svg id="svg-layer" style="position: absolute; top: 0; left: 0; width: 100000px; height: 100000px; pointer-events: none; z-index: 1;">
-                <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orientation="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#18181b" /></marker></defs>
+            <svg id="svg-layer">
+                <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orientation="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#222" /></marker></defs>
             </svg>
             <div id="nodes-container" style="position: relative; z-index: 2;"></div>
         </div>
     </main>
 
     <!-- MODALS -->
+    <div id="custom-modal" class="fixed inset-0 z-[110] modal-overlay hidden flex items-center justify-center p-6" onclick="if(event.target === this) toggleCustomModal()">
+        <div class="bg-zinc-900 w-full max-w-sm rounded-[32px] border border-zinc-800 p-12 shadow-2xl">
+            <h2 class="text-2xl font-bold mb-8 text-white tracking-tight">Register module</h2>
+            <label class="text-[10px] font-bold text-zinc-600 uppercase mb-3 block tracking-widest">Display label</label>
+            <input type="text" id="custom-title" placeholder="Economy system" class="glass-input">
+            <label class="text-[10px] font-bold text-zinc-600 uppercase mb-3 block tracking-widest">Icon reference</label>
+            <input type="text" id="custom-icon" placeholder="zap, box, or star" class="glass-input">
+            <div class="flex gap-4 mt-8">
+                <button onclick="toggleCustomModal()" class="flex-1 py-4 text-zinc-600 text-xs font-bold">Cancel</button>
+                <button onclick="submitCustomElement()" class="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-bold shadow-lg">Register</button>
+            </div>
+        </div>
+    </div>
+
     <div id="import-modal" class="fixed inset-0 z-[100] modal-overlay hidden flex items-center justify-center p-6" onclick="if(event.target === this) toggleImportModal()">
-        <div class="bg-zinc-950 w-full max-w-xl rounded-[40px] border border-zinc-800 p-12 shadow-2xl">
-            <h2 class="text-3xl font-black italic tracking-tighter uppercase mb-2">Import Stream</h2>
-            <p class="text-xs text-zinc-700 mb-10 font-bold tracking-widest uppercase">Pase JSON flow to hard-sync workspace state.</p>
-            <textarea id="import-text" rows="10" placeholder='{"nodes": [...]}' class="w-full p-6 bg-black border border-zinc-800 rounded-3xl text-xs font-mono text-zinc-500 outline-none focus:border-blue-600 mb-10 shadow-inner"></textarea>
-            <div class="flex gap-4">
-                <button onclick="toggleImportModal()" class="flex-1 py-4 text-zinc-700 text-[10px] font-black uppercase">Cancel</button>
-                <button onclick="handleTextImport()" class="flex-1 py-4 bg-white text-black rounded-xl text-[10px] font-black uppercase">Hard Sync</button>
+        <div class="bg-zinc-900 w-full max-w-xl rounded-[48px] border border-zinc-800 p-16 shadow-2xl">
+            <h2 class="text-3xl font-bold mb-8 text-white tracking-tight">Sync manifest</h2>
+            <p class="text-sm text-zinc-500 mb-10">Inject build JSON to restore the workspace logic tree.</p>
+            <textarea id="import-text" rows="8" placeholder='{"nodes": [...]}' class="glass-input h-72 font-mono text-indigo-400"></textarea>
+            <div class="flex gap-6 mt-4">
+                <button onclick="toggleImportModal()" class="flex-1 py-5 text-zinc-600 text-[11px] font-bold uppercase">Abort</button>
+                <button onclick="handleTextImport()" class="flex-1 py-5 bg-white text-black rounded-3xl text-[11px] font-bold">Hard sync</button>
             </div>
         </div>
     </div>
 
     <div id="export-modal" class="fixed inset-0 z-[100] modal-overlay hidden flex items-center justify-center p-6" onclick="if(event.target === this) hideExportModal()">
-        <div class="bg-zinc-950 w-full max-w-3xl rounded-[40px] border border-zinc-900 flex flex-col max-h-[85vh] shadow-2xl">
-            <div class="p-12 border-b border-zinc-900 flex items-center justify-between">
-                <h2 class="text-2xl font-black italic uppercase tracking-tighter italic text-white">Manifest Export</h2>
-                <button onclick="hideExportModal()"><i data-lucide="x" class="w-8 h-8 text-zinc-800"></i></button>
+        <div class="bg-zinc-900 w-full max-w-4xl rounded-[64px] border border-zinc-800 flex flex-col max-h-[85vh] shadow-2xl">
+            <div class="p-12 border-b border-zinc-800 flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-white tracking-tight italic">Studio Manifest Build</h2>
+                <button onclick="hideExportModal()"><i data-lucide="x" class="w-8 h-8 text-zinc-700"></i></button>
             </div>
             <div class="p-12 flex-1 overflow-y-auto thin-scroll">
                 <div class="grid grid-cols-2 gap-8 mb-12">
-                    <button onclick="downloadJSON()" class="p-10 border border-zinc-900 rounded-3xl text-left hover:border-white transition-all group">
-                        <h4 class="text-base font-black group-hover:text-blue-500 transition-colors uppercase italic">JSON Manifest</h4>
-                        <p class="text-[9px] text-zinc-700 font-black uppercase tracking-widest mt-2">Full Core Data</p>
+                    <button onclick="downloadJSON()" class="p-10 border border-zinc-800 rounded-[32px] text-left hover:border-white transition-all group">
+                        <h4 class="text-base font-bold group-hover:text-indigo-500 transition-colors uppercase tracking-widest">JSON build</h4>
+                        <p class="text-[10px] text-zinc-700 font-bold uppercase tracking-widest mt-2">Full logic archive</p>
                     </button>
-                    <button onclick="copyFlowText()" class="p-10 border border-zinc-900 rounded-3xl text-left hover:border-white transition-all group">
-                        <h4 class="text-base font-black group-hover:text-blue-500 transition-colors uppercase italic">Text Flow</h4>
-                        <p class="text-[9px] text-zinc-700 font-black uppercase tracking-widest mt-2">Readable Logic</p>
+                    <button onclick="copyFlowText()" class="p-10 border border-zinc-800 rounded-[32px] text-left hover:border-white transition-all group">
+                        <h4 class="text-base font-bold group-hover:text-indigo-500 transition-colors uppercase tracking-widest">Flow summary</h4>
+                        <p class="text-[10px] text-zinc-700 font-bold uppercase tracking-widest mt-2">Readable documentation</p>
                     </button>
                 </div>
-                <pre id="export-preview" class="bg-black text-zinc-700 p-10 rounded-3xl text-[14px] font-mono leading-relaxed border border-zinc-900"></pre>
+                <pre id="export-preview" class="bg-black text-zinc-600 p-12 rounded-[40px] text-sm font-mono leading-relaxed border border-zinc-800"></pre>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Catalog Generator (Expanded to 250+) ---
+        // --- Catalog Data (30+ Discord Elements) ---
         const CATALOG = {
-            'Discord Bot Engine': [
-                { id: 'dbot_onmsg', icon: 'message-square', title: 'On Message' }, { id: 'dbot_onjoin', icon: 'user-plus', title: 'On Join' },
-                { id: 'dbot_onleave', icon: 'user-minus', title: 'On Leave' }, { id: 'dbot_onreact', icon: 'smile', title: 'On Reaction' },
-                { id: 'dbot_kick', icon: 'user-x', title: 'Kick User' }, { id: 'dbot_ban', icon: 'lock', title: 'Ban User' },
-                { id: 'dbot_embed', icon: 'layout', title: 'Send Embed' }, { id: 'dbot_dm', icon: 'mail', title: 'Send DM' },
-                { id: 'dbot_role_add', icon: 'shield', title: 'Add Role' }, { id: 'dbot_role_rem', icon: 'shield-off', title: 'Rem Role' },
-                { id: 'dbot_timeout', icon: 'clock', title: 'Set Timeout' }, { id: 'dbot_status', icon: 'activity', title: 'Bot Status' },
-                { id: 'dbot_ch_create', icon: 'plus-circle', title: 'New Channel' }, { id: 'dbot_ch_del', icon: 'minus-circle', title: 'Del Channel' },
-                { id: 'dbot_slow', icon: 'snail', title: 'Slow Mode' }, { id: 'dbot_audit', icon: 'search', title: 'Fetch Audit' },
-                { id: 'dbot_poll', icon: 'bar-chart', title: 'New Poll' }, { id: 'dbot_sticker', icon: 'star', title: 'Sticker' },
-                { id: 'dbot_btn', icon: 'mouse-pointer', title: 'Add Button' }, { id: 'dbot_select', icon: 'list', title: 'Select Menu' },
-                { id: 'dbot_onedit', icon: 'edit', title: 'On Edit' }, { id: 'dbot_ondel', icon: 'trash-2', title: 'On Delete' },
-                { id: 'dbot_onvoice', icon: 'mic', title: 'Voice Join' }, { id: 'dbot_onvleave', icon: 'mic-off', title: 'Voice Leave' },
-                { id: 'dbot_invite', icon: 'link', title: 'New Invite' }, { id: 'dbot_onban', icon: 'shield-alert', title: 'On Ban' },
-                { id: 'dbot_ch_lock', icon: 'lock', title: 'Lock Channel' }, { id: 'dbot_ch_unlock', icon: 'unlock', title: 'Unlock' },
-                { id: 'dbot_nick', icon: 'type', title: 'Set Nick' }, { id: 'dbot_guild_info', icon: 'info', title: 'Guild Data' }
-                // ... More (Generated for brevity but structured similarly)
+            'Triggers': [
+                { id: 'ev_msg', icon: 'message-square', title: 'On Message' }, { id: 'ev_slash', icon: 'terminal', title: 'Slash Command' },
+                { id: 'ev_join', icon: 'user-plus', title: 'User Join' }, { id: 'ev_leave', icon: 'user-minus', title: 'User Leave' },
+                { id: 'ev_react', icon: 'smile', title: 'Reaction' }, { id: 'ev_ready', icon: 'power', title: 'Bot Ready' },
+                { id: 'ev_cron', icon: 'clock', title: 'Interval' }, { id: 'ev_voice', icon: 'mic', title: 'Voice Join' }
             ],
-            'Website Systems': [
-                { id: 'web_addcls', icon: 'plus-square', title: 'Add Class' }, { id: 'web_remcls', icon: 'minus-square', title: 'Remove Class' },
-                { id: 'web_setattr', icon: 'tag', title: 'Set Attribute' }, { id: 'web_settext', icon: 'type', title: 'Set Text' },
-                { id: 'web_sethtml', icon: 'code', title: 'Set HTML' }, { id: 'web_local_s', icon: 'database', title: 'Local Save' },
-                { id: 'web_local_g', icon: 'database', title: 'Local Get' }, { id: 'web_redir', icon: 'external-link', title: 'Redirect' },
-                { id: 'web_reload', icon: 'refresh-cw', title: 'Reload' }, { id: 'web_alert', icon: 'alert-triangle', title: 'Alert' },
-                { id: 'web_confirm', icon: 'help-circle', title: 'Confirm' }, { id: 'web_geo', icon: 'map-pin', title: 'GeoLocation' },
-                { id: 'web_copy', icon: 'copy', title: 'Copy Text' }, { id: 'web_notif', icon: 'bell', title: 'Notify' },
-                { id: 'web_theme', icon: 'moon', title: 'Dark Mode' }, { id: 'web_light', icon: 'sun', title: 'Light Mode' },
-                { id: 'web_anim', icon: 'play', title: 'Animate' }, { id: 'web_scroll', icon: 'arrow-down', title: 'Scroll To' },
-                { id: 'web_form', icon: 'file-text', title: 'Form Post' }, { id: 'web_canvas', icon: 'pen-tool', title: 'Canvas' }
+            'Interaction': [
+                { id: 'act_send', icon: 'send', title: 'Send Msg' }, { id: 'act_reply', icon: 'corner-up-left', title: 'Reply' },
+                { id: 'act_embed', icon: 'layout', title: 'Build Embed' }, { id: 'act_dm', icon: 'mail', title: 'Send DM' },
+                { id: 'act_btn', icon: 'mouse-pointer-2', title: 'Button' }, { id: 'act_modal', icon: 'columns', title: 'Modal' }
             ],
-            'Logic Stacks': [
-                { id: 'l_if', icon: 'split', title: 'If / Else' }, { id: 'l_loop', icon: 'rotate-cw', title: 'For Loop' },
-                { id: 'l_switch', icon: 'layers', title: 'Switch' }, { id: 'l_wait', icon: 'hourglass', title: 'Delay' },
-                { id: 'l_try', icon: 'shield-alert', title: 'Try/Catch' }, { id: 'l_async', icon: 'zap', title: 'Async Block' },
-                { id: 'l_regex', icon: 'search', title: 'RegEx Match' }, { id: 'l_math', icon: 'calculator', title: 'Calculation' }
+            'Moderation': [
+                { id: 'mod_kick', icon: 'user-x', title: 'Kick User' }, { id: 'mod_ban', icon: 'lock', title: 'Ban User' },
+                { id: 'mod_timeout', icon: 'clock', title: 'Timeout' }, { id: 'mod_purge', icon: 'trash-2', title: 'Purge Chat' },
+                { id: 'mod_warn', icon: 'alert-triangle', title: 'Warn User' }, { id: 'mod_nick', icon: 'type', title: 'Set Nick' }
             ],
-            'Fetch & Network': [
-                { id: 'f_get', icon: 'arrow-down-circle', title: 'HTTP GET' }, { id: 'f_post', icon: 'arrow-up-circle', title: 'HTTP POST' },
-                { id: 'f_db_read', icon: 'database', title: 'DB Read' }, { id: 'f_db_write', icon: 'database', title: 'DB Write' },
-                { id: 'f_auth', icon: 'lock', title: 'Bearer Auth' }, { id: 'f_gql', icon: 'box', title: 'GraphQL' }
+            'Logic': [
+                { id: 'l_if', icon: 'split', title: 'Condition' }, { id: 'l_loop', icon: 'rotate-cw', title: 'Iteration' },
+                { id: 'l_var', icon: 'box', title: 'Set Variable' }, { id: 'l_wait', icon: 'hourglass', title: 'Set Delay' },
+                { id: 'f_get', icon: 'server', title: 'Fetch API' }, { id: 'f_db', icon: 'database', title: 'SQL Access' }
             ],
-            'Extras': [
-                { id: 'x_log', icon: 'terminal', title: 'Log' }, { id: 'x_mail', icon: 'mail', title: 'Email' },
-                { id: 'x_btn', icon: 'mouse-pointer', title: 'UI Button' }, { id: 'x_input', icon: 'edit-3', title: 'Input Field' }
-            ]
+            'Custom Modules': []
         };
 
         // --- System State ---
-        let projects = JSON.parse(localStorage.getItem('am_studio_manifest_v8') || '{}');
+        let projects = JSON.parse(localStorage.getItem('am_studio_manifest_v16') || '{}');
         let currentProjectId = localStorage.getItem('am_active_id') || 'default';
         
         let nodes = [];
@@ -373,54 +396,60 @@
         let isLinkMode = false;
         let linkSequence = [];
 
-        const COLORS = { blue: '#3b82f6', emerald: '#10b981', purple: '#a855f7', orange: '#f97316', zinc: '#52525b', rose: '#f43f5e', amber: '#fbbf24', gray: '#334155' };
+        const COLORS = { blurple: '#5865F2', emerald: '#10b981', gold: '#FEE75C', red: '#ED4245', zinc: '#52525b' };
 
+        // --- Core Studio Logic ---
         window.onload = () => {
             lucide.createIcons();
             initSidebarResize();
             initColorPalette();
             filterElements(); 
             if (Object.keys(projects).length === 0) {
-                projects['default'] = { name: 'Workspace v8', nodes: [], connections: [], transform: { x: window.innerWidth/2, y: 150, scale: 1 }, updated: Date.now() };
+                projects['default'] = { name: 'Logic Cluster v1', nodes: [], connections: [], transform: { x: window.innerWidth/2, y: 150, scale: 1 }, updated: Date.now() };
             }
             loadProject(currentProjectId);
             window.addEventListener('keydown', handleGlobalKeys);
         };
 
-        // --- Editor: Fill Answers System ---
-        function getFieldsForType(type) {
-            // Mapping node types to specific configurations
-            const common = [{ label: 'Identity', key: 'title', type: 'text' }];
-            const logic = [{ label: 'Logic Definition', key: 'logic', type: 'textarea' }];
-            
-            if (type.startsWith('dbot_')) {
-                return [...common, { label: 'Channel ID', key: 'channel', type: 'text' }, { label: 'Message Content', key: 'content', type: 'textarea' }];
-            }
-            if (type.startsWith('web_')) {
-                return [...common, { label: 'Selector', key: 'selector', type: 'text' }, { label: 'Value/Code', key: 'value', type: 'textarea' }];
-            }
-            if (type.startsWith('f_')) {
-                return [...common, { label: 'Endpoint URL', key: 'url', type: 'text' }, { label: 'Request Method', key: 'method', type: 'text' }, { label: 'Headers', key: 'headers', type: 'textarea' }];
-            }
-            return [...common, ...logic];
+        function closeEditor() { 
+            selectedId = null; 
+            document.getElementById('node-editor').style.transform = 'translateX(500px)'; 
+            renderNodes(); 
+            autoSave(); 
         }
 
-        // --- Sidebar ---
+        function toggleCustomModal() {
+            document.getElementById('custom-modal').classList.toggle('hidden');
+        }
+
+        function submitCustomElement() {
+            const title = document.getElementById('custom-title').value;
+            const icon = document.getElementById('custom-icon').value;
+            if (title && icon) {
+                CATALOG['Custom Modules'].push({ id: 'cust_' + Date.now(), icon, title });
+                filterElements(); toggleCustomModal();
+                document.getElementById('custom-title').value = '';
+                document.getElementById('custom-icon').value = '';
+            }
+        }
+
+        function toggleImportModal() {
+            document.getElementById('import-modal').classList.toggle('hidden');
+        }
+
         function filterElements() {
             const query = document.getElementById('element-search').value.toLowerCase();
             const content = document.getElementById('sidebar-content');
             content.innerHTML = '';
-            
             Object.keys(CATALOG).forEach(cat => {
                 const filtered = CATALOG[cat].filter(el => el.title.toLowerCase().includes(query));
                 if (filtered.length > 0) {
                     const title = document.createElement('h3');
                     title.className = "side-title";
-                    title.innerHTML = `<span>${cat}</span> <span class="opacity-30">${filtered.length}</span>`;
+                    title.innerText = cat;
                     content.appendChild(title);
-                    
                     const grid = document.createElement('div');
-                    grid.className = "grid grid-cols-2 gap-1.5 px-1";
+                    grid.className = "grid grid-cols-2 gap-2";
                     filtered.forEach(item => {
                         const btn = document.createElement('button');
                         btn.className = "side-btn";
@@ -434,25 +463,11 @@
             lucide.createIcons();
         }
 
-        function initSidebarResize() {
-            const sidebar = document.getElementById('sidebar');
-            const resizer = document.getElementById('sidebar-resizer');
-            let isResizing = false;
-            resizer.addEventListener('mousedown', (e) => { isResizing = true; document.body.style.cursor = 'col-resize'; });
-            window.addEventListener('mousemove', (e) => {
-                if (!isResizing) return;
-                const newWidth = e.clientX - 24;
-                if (newWidth > 120 && newWidth < 600) sidebar.style.width = newWidth + 'px';
-            });
-            window.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = 'default'; });
-        }
-
-        // --- Node Logic ---
         function addNode(type, icon, title) {
             const id = 'n_' + Date.now();
-            const x = (window.innerWidth/2 - transform.x)/transform.scale - 100;
-            const y = (window.innerHeight/2 - transform.y)/transform.scale - 19;
-            nodes.push({ id, type, icon, title, props: { title: title }, x, y, color: COLORS.gray });
+            const x = (window.innerWidth/2 - transform.x)/transform.scale - 80;
+            const y = (window.innerHeight/2 - transform.y)/transform.scale - 17;
+            nodes.push({ id, type, icon, title, props: { title }, x, y, color: COLORS.zinc });
             renderNodes(); selectNode(id); autoSave();
         }
 
@@ -461,47 +476,40 @@
             const node = nodes.find(n => n.id === id);
             const editor = document.getElementById('editor-fields');
             editor.innerHTML = '';
-            
             if (node) {
-                const fields = getFieldsForType(node.type);
+                const fields = [
+                    { label: 'Reference Label', key: 'title', type: 'text' },
+                    { label: 'Logic Config', key: 'logic', type: 'textarea' }
+                ];
+                
                 fields.forEach(f => {
                     const wrap = document.createElement('div');
-                    wrap.innerHTML = `<label class="text-[9px] font-black text-zinc-800 uppercase mb-3 block tracking-widest">${f.label}</label>`;
-                    
+                    wrap.innerHTML = `<label class="text-[10px] font-bold text-zinc-700 uppercase mb-3 block tracking-widest">${f.label}</label>`;
                     const input = f.type === 'textarea' ? document.createElement('textarea') : document.createElement('input');
-                    if(f.type === 'textarea') input.rows = 4;
-                    input.className = "prop-input thin-scroll";
+                    if(f.type === 'textarea') input.style.height = '120px';
+                    input.className = "glass-input thin-scroll";
                     input.value = (f.key === 'title' ? node.title : (node.props?.[f.key] || ''));
-                    
                     input.oninput = (e) => {
                         if(f.key === 'title') node.title = e.target.value;
-                        else {
-                            if(!node.props) node.props = {};
-                            node.props[f.key] = e.target.value;
-                        }
+                        else { if(!node.props) node.props = {}; node.props[f.key] = e.target.value; }
                         renderNodes();
                     };
-                    
                     wrap.appendChild(input);
                     editor.appendChild(wrap);
                 });
                 document.getElementById('node-editor').style.transform = 'translateX(0)';
             } else {
-                document.getElementById('node-editor').style.transform = 'translateX(500px)';
+                closeEditor();
             }
             renderNodes();
         }
 
-        function closeEditor() { selectedId = null; document.getElementById('node-editor').style.transform = 'translateX(500px)'; renderNodes(); autoSave(); }
-        function deleteSelectedNode() { if (!selectedId) return; nodes = nodes.filter(n => n.id !== selectedId); connections = connections.filter(c => c.from !== selectedId && c.to !== selectedId); closeEditor(); renderConnections(); }
-
-        // --- Persistence ---
+        // --- Project Control ---
         function loadProject(id) {
             currentProjectId = id;
             localStorage.setItem('am_active_id', id);
             const p = projects[id] || projects['default'];
-            nodes = p.nodes || [];
-            connections = p.connections || [];
+            nodes = p.nodes || []; connections = p.connections || [];
             transform = p.transform || { x: window.innerWidth/2, y: 150, scale: 1 };
             document.getElementById('active-project-name').innerText = p.name;
             document.getElementById('dashboard-view').classList.add('hidden');
@@ -510,11 +518,8 @@
 
         function autoSave() {
             if (!projects[currentProjectId]) return;
-            projects[currentProjectId] = {
-                name: document.getElementById('active-project-name').innerText,
-                nodes, connections, transform, updated: Date.now()
-            };
-            localStorage.setItem('am_studio_manifest_v8', JSON.stringify(projects));
+            projects[currentProjectId] = { name: document.getElementById('active-project-name').innerText, nodes, connections, transform, updated: Date.now() };
+            localStorage.setItem('am_studio_manifest_v16', JSON.stringify(projects));
         }
 
         function goToHome() {
@@ -523,9 +528,9 @@
             Object.keys(projects).forEach(id => {
                 const p = projects[id];
                 const card = document.createElement('div');
-                card.className = "bg-zinc-950 p-12 rounded-[50px] border border-zinc-900 hover:border-white transition-all cursor-pointer group shadow-2xl";
+                card.className = "bg-zinc-900 p-12 rounded-[50px] border border-white/5 hover:border-indigo-500 transition-all cursor-pointer group shadow-2xl";
                 card.onclick = () => loadProject(id);
-                card.innerHTML = `<div class="flex justify-between items-start mb-10"><div class="p-6 bg-zinc-900 rounded-3xl text-zinc-600 group-hover:text-white"><i data-lucide="package" class="w-12 h-12"></i></div><button onclick="event.stopPropagation(); deleteProject('${id}')" class="text-zinc-800 hover:text-red-500"><i data-lucide="trash-2" class="w-6 h-6"></i></button></div><h4 class="text-3xl font-black uppercase italic text-white">${p.name}</h4><p class="text-[12px] text-zinc-800 uppercase mt-4 tracking-[0.4em]">${p.nodes.length} Actions • ${new Date(p.updated).toLocaleDateString()}</p>`;
+                card.innerHTML = `<div class="flex justify-between items-start mb-8"><div class="p-5 bg-zinc-800 rounded-2xl group-hover:bg-indigo-600 transition-all"><i data-lucide="package" class="w-12 h-12 text-zinc-700 group-hover:text-white"></i></div><button onclick="event.stopPropagation(); deleteProject('${id}')" class="text-zinc-800 hover:text-red-500"><i data-lucide="trash-2" class="w-6 h-6"></i></button></div><h4 class="text-3xl font-black uppercase italic text-white">${p.name}</h4><p class="text-[11px] text-zinc-700 uppercase mt-4 tracking-[0.4em] font-bold">${p.nodes.length} nodes saved</p>`;
                 grid.appendChild(card);
             });
             document.getElementById('dashboard-view').classList.remove('hidden');
@@ -533,25 +538,24 @@
         }
 
         function newProjectFlow() {
-            const name = prompt("Reference ID:", "System_Delta");
-            if (!name) return;
-            const id = 'p_' + Date.now();
-            projects[id] = { name, nodes: [], connections: [], transform: { x: window.innerWidth/2, y: 150, scale: 1 }, updated: Date.now() };
-            loadProject(id);
-            autoSave();
+            const name = prompt("Manifest identifier:", "Project_Beta");
+            if (name) {
+                const id = 'p_' + Date.now();
+                projects[id] = { name, nodes: [], connections: [], transform: { x: window.innerWidth/2, y: 150, scale: 1 }, updated: Date.now() };
+                loadProject(id); autoSave();
+            }
         }
 
         function deleteProject(id) {
-            if (id === 'default') return alert("Protected.");
-            if(confirm("Erase Build?")) {
+            if (id === 'default') return alert("Protected Master Build.");
+            if(confirm("Hard delete manifest?")) {
                 delete projects[id];
-                localStorage.setItem('am_studio_manifest_v8', JSON.stringify(projects));
+                localStorage.setItem('am_studio_manifest_v16', JSON.stringify(projects));
                 if (currentProjectId === id) currentProjectId = 'default';
                 goToHome();
             }
         }
 
-        // --- Linking ---
         function handleGlobalKeys(e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'h') {
@@ -559,7 +563,7 @@
                 document.getElementById('linking-toast').classList.toggle('hidden', !isLinkMode);
                 renderNodes();
             }
-            if (e.key === 'Enter' && isLinkMode) confirmBatchLink();
+            if (e.key === 'Enter') { if(isLinkMode) confirmBatchLink(); else closeEditor(); }
             if (e.key === 'Escape') { isLinkMode = false; closeEditor(); renderNodes(); }
             if (e.key === 'Backspace' || e.key === 'Delete') deleteSelectedNode();
         }
@@ -577,7 +581,15 @@
             renderNodes(); renderConnections(); autoSave();
         }
 
-        // --- Render ---
+        function handleNodeInteract(id, e) {
+            e.stopPropagation();
+            if (isLinkMode) {
+                if(linkSequence.includes(id)) linkSequence.splice(linkSequence.indexOf(id), 1);
+                else linkSequence.push(id);
+                renderNodes();
+            } else { selectNode(id); startNodeDrag(id, e); }
+        }
+
         function renderNodes() {
             const container = document.getElementById('nodes-container');
             if (!container) return;
@@ -587,8 +599,8 @@
                 const lIdx = linkSequence.indexOf(n.id);
                 el.className = `node ${selectedId === n.id ? 'node-active' : ''} ${lIdx > -1 ? 'node-linking' : ''}`;
                 el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; el.id = n.id;
-                el.innerHTML = `<div style="color: ${n.color || '#3b82f6'}"><i data-lucide="${n.icon || 'circle'}" class="w-4 h-4"></i></div><span class="text-[10px] font-black uppercase tracking-tight whitespace-nowrap ml-3">${n.title}</span>${lIdx > -1 ? `<div class="link-badge">${lIdx + 1}</div>` : ''}`;
-                el.onmousedown = (e) => { e.stopPropagation(); if(isLinkMode){ if(linkSequence.includes(n.id)) linkSequence.splice(linkSequence.indexOf(n.id), 1); else linkSequence.push(n.id); renderNodes(); } else { selectNode(n.id); startNodeDrag(n.id, e); } };
+                el.innerHTML = `<div style="color: ${n.color || '#3b82f6'}"><i data-lucide="${n.icon || 'circle'}" class="w-4 h-4"></i></div><span class="text-[11px] font-bold text-zinc-300 uppercase tracking-tight whitespace-nowrap ml-3">${n.title}</span>${lIdx > -1 ? `<div class="link-badge">${lIdx + 1}</div>` : ''}`;
+                el.onmousedown = (e) => handleNodeInteract(n.id, e);
                 container.appendChild(el);
             });
             lucide.createIcons();
@@ -597,11 +609,12 @@
         function renderConnections() {
             const svg = document.getElementById('svg-layer');
             if (!svg) return;
+            const offset = 100000;
             svg.innerHTML = `<defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orientation="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#18181b" /></marker></defs>`;
             connections.forEach(c => {
                 const f = nodes.find(n => n.id === c.from), t = nodes.find(n => n.id === c.to);
                 if (f && t) {
-                    const x1 = f.x + 100, y1 = f.y + 40, x2 = t.x + 100, y2 = t.y;
+                    const x1 = f.x + 90 + offset, y1 = f.y + 19 + offset, x2 = t.x + 90 + offset, y2 = t.y + offset;
                     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                     const cpY = (y1 + y2) / 2;
                     path.setAttribute("d", `M ${x1} ${y1} C ${x1} ${cpY}, ${x2} ${cpY}, ${x2} ${y2}`);
@@ -612,7 +625,6 @@
             });
         }
 
-        // --- Canvas Engine ---
         function updateCanvasTransform() {
             const c = document.getElementById('canvas-content');
             if (!c) return;
@@ -621,62 +633,17 @@
         }
         function handleWheel(e) { e.preventDefault(); const f = e.deltaY > 0 ? 0.94 : 1.06; zoomCanvas(f, e.clientX, e.clientY); }
         function zoomCanvas(f, cx, cy) {
-            const ns = Math.min(Math.max(transform.scale * f, 0.05), 4);
+            const ns = Math.min(Math.max(transform.scale * f, 0.05), 3);
             const wx = (cx - transform.x) / transform.scale, wy = (cy - transform.y) / transform.scale;
             transform.scale = ns; transform.x = cx - wx * ns; transform.y = cy - wy * ns; updateCanvasTransform();
         }
-        function handleCanvasDown(e) {
-            if (e.target.closest('.node')) return;
-            isPanning = true; startPos = { x: e.clientX - transform.x, y: e.clientY - transform.y };
-            window.addEventListener('mousemove', onCanvasPan);
-            window.addEventListener('mouseup', () => { isPanning = false; autoSave(); });
-        }
+        function handleCanvasDown(e) { if (e.target.closest('.node')) return; isPanning = true; startPos = { x: e.clientX - transform.x, y: e.clientY - transform.y }; window.addEventListener('mousemove', onCanvasPan); window.addEventListener('mouseup', () => { isPanning = false; autoSave(); }); }
         function onCanvasPan(e) { if (!isPanning) return; transform.x = e.clientX - startPos.x; transform.y = e.clientY - startPos.y; updateCanvasTransform(); }
-        function startNodeDrag(id, e) {
-            dragId = id; const n = nodes.find(n => n.id === id);
-            dragOffset = { x: e.clientX/transform.scale - n.x, y: e.clientY/transform.scale - n.y };
-            window.addEventListener('mousemove', onNodeDrag);
-            window.addEventListener('mouseup', () => { dragId = null; autoSave(); });
-        }
-        function onNodeDrag(e) {
-            if (!dragId) return; const n = nodes.find(n => n.id === dragId);
-            n.x = e.clientX/transform.scale - dragOffset.x; n.y = e.clientY/transform.scale - dragOffset.y;
-            const el = document.getElementById(dragId); if(el) { el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; renderConnections(); }
-        }
-        function handleCanvasDblClick(e) { if(e.target.closest('.node')) return; addNode('event', 'zap', 'Event Trigger'); }
+        function startNodeDrag(id, e) { dragId = id; const n = nodes.find(n => n.id === id); dragOffset = { x: e.clientX/transform.scale - n.x, y: e.clientY/transform.scale - n.y }; window.addEventListener('mousemove', onNodeDrag); window.addEventListener('mouseup', () => { dragId = null; autoSave(); }); }
+        function onNodeDrag(e) { if (!dragId) return; const n = nodes.find(n => n.id === dragId); n.x = e.clientX/transform.scale - dragOffset.x; n.y = e.clientY/transform.scale - dragOffset.y; const el = document.getElementById(dragId); if(el) { el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; renderConnections(); } }
+        function handleCanvasDblClick(e) { if(e.target.closest('.node')) return; addNode('ev_ready', 'power', 'Init_Bot'); }
         function resetView() { transform = { x: window.innerWidth / 2, y: 150, scale: 1 }; updateCanvasTransform(); }
-
-        // --- IO ---
-        function generateFlowText() {
-            let out = "ACTIONMAPPER FLOW EXPORT\n\n";
-            nodes.forEach((n, i) => {
-                const targets = connections.filter(c => c.from === n.id).map(c => nodes.find(x => x.id === c.to)?.title);
-                out += `[${i + 1}] ${n.type.toUpperCase()} "${n.title}"\nParams:\n${JSON.stringify(n.props || {}, null, 2)}\n`;
-                if(targets.length) out += `\nFlows To:\n  ${targets.join('\n  ')}\n`;
-                out += `\n`;
-            });
-            return out;
-        }
-        function showExportModal() { document.getElementById('export-modal').classList.remove('hidden'); document.getElementById('export-preview').innerText = generateFlowText(); }
-        function hideExportModal() { document.getElementById('export-modal').classList.add('hidden'); }
-        function toggleImportModal() { document.getElementById('import-modal').classList.toggle('hidden'); lucide.createIcons(); }
-        function handleTextImport() {
-            try {
-                const d = JSON.parse(document.getElementById('import-text').value);
-                nodes = d.nodes || []; connections = d.connections || [];
-                resetView(); renderNodes(); renderConnections(); toggleImportModal(); autoSave();
-            } catch(e) { alert("Format Error."); }
-        }
-        function downloadJSON() {
-            const b = new Blob([JSON.stringify({nodes, connections}, null, 2)], {type:'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'build.json'; a.click();
-        }
-        function copyFlowText() {
-            const t = generateFlowText(); const el = document.createElement("textarea"); el.value = t;
-            document.body.appendChild(el); el.select();
-            try { document.execCommand('copy'); alert("Manifest Copied."); } catch (err) { alert("Copy manually."); }
-            document.body.removeChild(el);
-        }
+        function deleteSelectedNode() { if (!selectedId) return; nodes = nodes.filter(n => n.id !== selectedId); connections = connections.filter(c => c.from !== selectedId && c.to !== selectedId); closeEditor(); renderConnections(); }
 
         function spacizeLayout() {
             if(!nodes.length) return;
@@ -691,25 +658,73 @@
             startNodes.forEach(n => traverse(n.id, 0));
             Object.keys(levels).forEach(l => {
                 const nInL = levels[l];
-                nInL.forEach((id, i) => { 
-                    const n = nodes.find(node => node.id === id); 
-                    n.x = (i * 260) - ((nInL.length - 1) * 130); 
-                    n.y = l * 200; 
-                });
+                nInL.forEach((id, i) => { const n = nodes.find(node => node.id === id); n.x = (i * 240) - ((nInL.length - 1) * 120); n.y = l * 180 + 200; });
             });
             resetView(); renderNodes(); renderConnections(); autoSave();
+        }
+
+        function generateFlowText() {
+            let out = "BUILD_MANIFEST\n\n";
+            nodes.forEach((n, i) => {
+                const targets = connections.filter(c => c.from === n.id).map(c => nodes.find(x => x.id === c.to)?.title);
+                out += `[${i + 1}] ${n.type.toUpperCase()} "${n.title}"\nParams: ${JSON.stringify(n.props || {})}\n`;
+                if(targets.length) out += `Flows to: ${targets.join(' → ')}\n`;
+                out += `\n`;
+            });
+            return out;
+        }
+
+        function handleTextImport() {
+            try {
+                const d = JSON.parse(document.getElementById('import-text').value);
+                const nodesToLoad = d.nodes || d.nodes_data || [];
+                const connsToLoad = d.connections || d.links || [];
+                nodes = nodesToLoad; connections = connsToLoad;
+                resetView(); renderNodes(); renderConnections(); toggleImportModal(); autoSave();
+            } catch(e) { alert("JSON parity error."); }
+        }
+
+        function downloadJSON() {
+            const data = { guide: "Use registerCustomElement('Category', 'id', 'icon', 'Title') for code-injection.", nodes, connections };
+            const b = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'build.json'; a.click();
+        }
+
+        function copyFlowText() {
+            const t = generateFlowText(); const el = document.createElement("textarea"); el.value = t;
+            document.body.appendChild(el); el.select();
+            document.execCommand('copy'); alert("Manifest copied."); document.body.removeChild(el);
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('minimized');
+            const icon = document.getElementById('sidebar-icon');
+            icon.setAttribute('data-lucide', sb.classList.contains('minimized') ? 'chevron-right' : 'chevron-left');
+            lucide.createIcons();
+        }
+
+        function initSidebarResize() {
+            const sidebar = document.getElementById('sidebar');
+            const resizer = document.getElementById('sidebar-resizer');
+            let resizing = false;
+            resizer.onmousedown = () => resizing = true;
+            window.onmousemove = (e) => { if(resizing && e.clientX > 100 && e.clientX < 500) sidebar.style.width = e.clientX + 'px'; };
+            window.onmouseup = () => resizing = false;
         }
 
         function initColorPalette() {
             const container = document.getElementById('color-picker');
             Object.values(COLORS).forEach(hex => {
                 const b = document.createElement('button');
-                b.className = "w-7 h-7 rounded-lg border border-zinc-800 transition-all hover:scale-110";
+                b.className = "w-6 h-6 rounded border border-white/5 transition-all hover:scale-110";
                 b.style.backgroundColor = hex;
                 b.onclick = () => { if(selectedId) { nodes.find(n => n.id === selectedId).color = hex; renderNodes(); autoSave(); } };
                 container.appendChild(b);
             });
         }
+        function showExportModal() { document.getElementById('export-modal').classList.remove('hidden'); document.getElementById('export-preview').innerText = generateFlowText(); }
+        function hideExportModal() { document.getElementById('export-modal').classList.add('hidden'); }
     </script>
 </body>
 </html>
