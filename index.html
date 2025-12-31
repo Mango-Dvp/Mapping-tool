@@ -3,18 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ActionMapper Pro | visual Planning Tool</title>
+    <title>ActionMapper Studio | Professional Workflow Designer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-canvas: #050505;
+            --grid-color: #111113;
+            --sidebar-bg: #09090b;
+            --node-bg: #111113;
+            --accent: #3b82f6;
+            --border: #1d1d21;
+        }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             overflow: hidden;
-            background-color: #f8fafc;
+            background-color: var(--bg-canvas);
+            color: #f4f4f5;
         }
 
+        /* Canvas Grid */
         .canvas-container {
             width: 100vw;
             height: 100vh;
@@ -22,561 +33,639 @@
             cursor: grab;
             overflow: hidden;
             background-image: 
-                radial-gradient(#cbd5e1 0.8px, transparent 0.8px);
-            background-size: 24px 24px;
+                radial-gradient(var(--grid-color) 2px, transparent 2px);
+            background-size: 50px 50px;
         }
 
-        .canvas-container:active {
-            cursor: grabbing;
-        }
+        .canvas-container:active { cursor: grabbing; }
 
         .canvas-content {
             position: absolute;
             transform-origin: 0 0;
-            transition: transform 0.05s linear;
             will-change: transform;
+            z-index: 1;
         }
 
+        /* Clean Node Style */
         .node {
             position: absolute;
-            width: 220px;
+            display: flex;
+            align-items: center;
+            height: 40px;
+            padding: 0 16px;
+            background: var(--node-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            transition: transform 0.1s linear, border-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+            min-width: 200px;
             user-select: none;
             cursor: pointer;
             z-index: 10;
-            transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
         }
 
         .node:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+            border-color: #52525b;
+            background: #18181b;
         }
 
         .node-active {
-            outline: 3px solid #000;
-            box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.05);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.2);
         }
 
-        .node-connecting-source {
-            outline: 3px solid #3b82f6;
-            animation: pulse-blue 1.5s infinite;
+        .node-linking {
+            border-color: var(--accent);
+            background: #172554;
+            animation: pulse-node 1.5s infinite;
         }
 
-        @keyframes pulse-blue {
-            0% { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.4); }
-            100% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        @keyframes pulse-node {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .link-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--accent);
+            color: white;
+            font-size: 10px;
+            font-weight: 900;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
         }
 
         .connector-line {
             fill: none;
-            stroke: #94a3b8;
-            stroke-width: 2;
+            stroke: #27272a;
+            stroke-width: 3;
             pointer-events: none;
-            transition: stroke 0.3s;
+            stroke-linecap: round;
         }
 
-        /* Modal styling */
+        /* Resizable Sidebar */
+        #sidebar {
+            width: 260px;
+            min-width: 70px;
+            max-width: 450px;
+            transition: transform 0.3s ease;
+        }
+
+        #sidebar.minimized {
+            width: 70px !important;
+        }
+
+        .resizer {
+            width: 5px;
+            height: 100%;
+            cursor: col-resize;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: background 0.2s;
+            z-index: 100;
+        }
+        .resizer:hover { background: var(--accent); }
+
+        .side-btn {
+            @apply flex items-center gap-4 w-full px-4 py-3 rounded-xl transition-all text-left mb-1 text-zinc-500 hover:text-white hover:bg-white/5 font-semibold text-[11px] tracking-tight;
+        }
+
+        #sidebar.minimized .side-btn span, 
+        #sidebar.minimized .side-title { display: none; }
+        #sidebar.minimized .side-btn { @apply justify-center px-0; }
+
+        .side-title { @apply text-[10px] font-black uppercase text-zinc-700 tracking-[0.3em] mt-6 mb-3 px-3; }
+
         .modal-overlay {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
+            background: rgba(0, 0, 0, 0.96);
+            backdrop-filter: blur(20px);
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        kbd {
+            @apply px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[9px] font-bold text-zinc-600 mx-0.5;
+        }
+
+        .thin-scroll::-webkit-scrollbar { width: 3px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
     </style>
 </head>
-<body class="text-slate-900">
+<body class="text-zinc-300">
 
-    <!-- Header Navigation -->
-    <nav class="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 z-50">
-        <div class="flex items-center gap-4">
-            <div class="bg-slate-900 text-white p-2 rounded-xl shadow-lg shadow-slate-200">
-                <i data-lucide="layout-template" class="w-5 h-5"></i>
-            </div>
-            <div>
-                <h1 class="text-base font-bold tracking-tight">ActionMapper Pro</h1>
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Workspace / Default</p>
+    <!-- DASHBOARD -->
+    <div id="dashboard-view" class="fixed inset-0 z-[100] bg-black overflow-y-auto p-12 hidden">
+        <div class="max-w-6xl mx-auto">
+            <header class="flex justify-between items-center mb-16">
+                <div>
+                    <h2 class="text-5xl font-black tracking-tighter text-white italic uppercase">Studio Core</h2>
+                    <p class="text-zinc-600 font-medium text-lg mt-2">Manage and switch between active logic designs.</p>
+                </div>
+                <button onclick="newProjectFlow()" class="bg-blue-600 text-white px-10 py-4 rounded-[20px] font-black text-xs hover:bg-blue-500 transition-all uppercase tracking-widest shadow-2xl">
+                    <i data-lucide="plus-circle" class="w-6 h-6 inline mr-2"></i> New Workflow
+                </button>
+            </header>
+            <div id="projects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </div>
+    </div>
+
+    <!-- TOP NAVIGATION -->
+    <nav class="fixed top-0 left-0 right-0 h-20 bg-zinc-950/90 backdrop-blur-2xl border-b border-zinc-900 flex items-center justify-between px-8 z-50">
+        <div class="flex items-center gap-8">
+            <button onclick="goToHome()" class="flex items-center gap-4 group">
+                <div class="bg-white text-black p-2 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all shadow-lg">
+                    <i data-lucide="layout" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 id="active-project-name" class="text-xs font-black tracking-[0.2em] uppercase truncate max-w-[200px]">Production Flow</h1>
+                    <p class="text-[8px] text-zinc-700 font-black uppercase tracking-widest">Logic Studio Designer</p>
+                </div>
+            </button>
+            
+            <div class="flex items-center gap-2 bg-zinc-900/50 p-1.5 rounded-2xl border border-zinc-900">
+                <button onclick="spacizeLayout()" class="flex items-center gap-2 px-5 py-2 hover:bg-white/5 rounded-xl transition-all text-blue-400 font-black text-[10px] tracking-[0.2em]">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>SPACIZE</span>
+                </button>
+                <div class="w-[1px] h-6 bg-zinc-800 mx-2"></div>
+                <button onclick="toggleImportModal()" class="flex items-center gap-2 px-5 py-2 hover:bg-white/5 rounded-xl transition-all text-zinc-500 hover:text-white font-black text-[10px] tracking-[0.2em]">
+                    <i data-lucide="terminal" class="w-4 h-4"></i>
+                    <span>IMPORT</span>
+                </button>
+                <button onclick="resetView()" class="p-2 hover:bg-white/5 rounded-xl text-zinc-500 transition-all"><i data-lucide="maximize" class="w-4 h-4"></i></button>
             </div>
         </div>
 
-        <div class="flex items-center gap-3">
-            <div class="flex items-center bg-slate-100 rounded-lg p-1 mr-4">
-                <button onclick="zoomCanvas(0.9)" class="p-1.5 hover:bg-white rounded-md transition-all text-slate-500 hover:text-slate-900">
-                    <i data-lucide="minus" class="w-4 h-4"></i>
-                </button>
-                <span id="zoom-label" class="text-[11px] font-bold px-3 min-w-[50px] text-center text-slate-600">100%</span>
-                <button onclick="zoomCanvas(1.1)" class="p-1.5 hover:bg-white rounded-md transition-all text-slate-500 hover:text-slate-900">
-                    <i data-lucide="plus" class="w-4 h-4"></i>
-                </button>
+        <div class="flex items-center gap-6">
+            <div id="linking-toast" class="hidden flex items-center gap-3 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl animate-pulse">
+                <i data-lucide="link" class="w-4 h-4"></i> LINK MODE ACTIVE
+            </div>
+
+            <div class="flex items-center bg-zinc-900 border border-zinc-900 rounded-xl p-1 shadow-inner">
+                <button onclick="zoomCanvas(0.8)" class="p-2 hover:bg-zinc-800 rounded-xl text-zinc-500 transition-all"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                <span id="zoom-label" class="text-[10px] font-black px-4 w-12 text-center text-zinc-500">100%</span>
+                <button onclick="zoomCanvas(1.2)" class="p-2 hover:bg-zinc-800 rounded-xl text-zinc-500 transition-all"><i data-lucide="plus" class="w-4 h-4"></i></button>
             </div>
             
-            <button onclick="showExportModal()" class="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
-                <i data-lucide="share-2" class="w-4 h-4"></i>
-                Finalize & Export
+            <button onclick="showExportModal()" class="flex items-center gap-3 px-8 py-3.5 bg-white text-black text-[10px] font-black rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-xl">
+                <i data-lucide="share" class="w-4 h-4"></i> EXPORT
             </button>
         </div>
     </nav>
 
-    <!-- Side Panel: Toolset -->
-    <aside class="fixed left-8 top-24 bottom-8 w-64 bg-white border border-slate-200 rounded-3xl shadow-xl shadow-slate-100 p-6 z-40 flex flex-col gap-8">
-        <div>
-            <h3 class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-5">System Actions</h3>
-            <div class="grid gap-2.5">
-                <button onclick="addNode('website')" class="add-btn group">
-                    <div class="bg-blue-50 text-blue-600 p-2 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-all"><i data-lucide="globe" class="w-4 h-4"></i></div>
-                    <span class="text-sm font-semibold">Web Interface</span>
-                </button>
-                <button onclick="addNode('bot')" class="add-btn group">
-                    <div class="bg-indigo-50 text-indigo-600 p-2 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-all"><i data-lucide="bot" class="w-4 h-4"></i></div>
-                    <span class="text-sm font-semibold">Automation Bot</span>
-                </button>
-                <button onclick="addNode('event')" class="add-btn group">
-                    <div class="bg-emerald-50 text-emerald-600 p-2 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-all"><i data-lucide="zap" class="w-4 h-4"></i></div>
-                    <span class="text-sm font-semibold">User Trigger</span>
-                </button>
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed left-6 top-24 bottom-6 bg-zinc-950/80 backdrop-blur-2xl border border-zinc-900 rounded-[32px] shadow-2xl z-40 flex flex-col overflow-hidden">
+        <div class="flex-1 overflow-y-auto thin-scroll p-4">
+            <section>
+                <h3 class="side-title">Events</h3>
+                <button onclick="addNode('event', 'zap', 'On Event')" class="side-btn"><i data-lucide="zap"></i><span>Trigger Event</span></button>
+                <button onclick="addNode('event', 'link-2', 'Webhook')" class="side-btn"><i data-lucide="link-2"></i><span>Webhook</span></button>
+                <button onclick="addNode('event', 'clock', 'Schedule')" class="side-btn"><i data-lucide="clock"></i><span>Cron Job</span></button>
+            </section>
+
+            <section>
+                <h3 class="side-title">Actions</h3>
+                <button onclick="addNode('action', 'split', 'Branch')" class="side-btn"><i data-lucide="split"></i><span>If / Else</span></button>
+                <button onclick="addNode('action', 'rotate-cw', 'Loop')" class="side-btn"><i data-lucide="rotate-cw"></i><span>Process Loop</span></button>
+                <button onclick="addNode('action', 'box', 'Variable')" class="side-btn"><i data-lucide="box"></i><span>Set Variable</span></button>
+                <button onclick="addNode('action', 'calculator', 'Math')" class="side-btn"><i data-lucide="calculator"></i><span>Calculator</span></button>
+                <button onclick="addNode('action', 'hourglass', 'Wait')" class="side-btn"><i data-lucide="hourglass"></i><span>Wait Step</span></button>
+            </section>
+
+            <section>
+                <h3 class="side-title">Fetch</h3>
+                <button onclick="addNode('fetch', 'server', 'API Request')" class="side-btn"><i data-lucide="server"></i><span>Fetch API</span></button>
+                <button onclick="addNode('fetch', 'database', 'Query')" class="side-btn"><i data-lucide="database"></i><span>DB Access</span></button>
+                <button onclick="addNode('fetch', 'file-text', 'File IO')" class="side-btn"><i data-lucide="file-text"></i><span>File Ops</span></button>
+                <button onclick="addNode('fetch', 'cloud', 'Cloud Get')" class="side-btn"><i data-lucide="cloud"></i><span>Get Data</span></button>
+            </section>
+
+            <section>
+                <h3 class="side-title">Extras</h3>
+                <button onclick="addNode('extra', 'mouse-pointer-2', 'Button Click')" class="side-btn"><i data-lucide="mouse-pointer-2"></i><span>UI Button</span></button>
+                <button onclick="addNode('extra', 'bell', 'Notify')" class="side-btn"><i data-lucide="bell"></i><span>Notification</span></button>
+                <button onclick="addNode('extra', 'terminal', 'Log')" class="side-btn"><i data-lucide="terminal"></i><span>Console Log</span></button>
+                <button onclick="addNode('extra', 'mail', 'Email')" class="side-btn"><i data-lucide="mail"></i><span>Send Email</span></button>
+            </section>
+        </div>
+        
+        <div class="mt-auto p-6 bg-black/40 border-t border-zinc-900">
+            <button onclick="toggleSidebarMinimize()" class="w-full py-2 hover:bg-white/5 rounded-xl transition-all text-zinc-700 hover:text-white mb-4">
+                <i id="minimize-icon" data-lucide="chevron-left" class="w-5 h-5 mx-auto"></i>
+            </button>
+            <div class="text-[8px] text-zinc-800 font-black uppercase tracking-[0.2em] space-y-2 opacity-50 overflow-hidden whitespace-nowrap">
+                <div class="flex justify-between items-center"><span>LINK</span><kbd>CTRL SHIFT H</kbd></div>
+                <div class="flex justify-between items-center"><span>CONFIRM</span><kbd>ENTER</kbd></div>
             </div>
         </div>
+        <div class="resizer" id="sidebar-resizer"></div>
+    </aside>
 
-        <div>
-            <h3 class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-5">Logic & Data</h3>
-            <div class="grid gap-2.5">
-                <button onclick="addNode('condition')" class="add-btn group">
-                    <div class="bg-amber-50 text-amber-600 p-2 rounded-lg group-hover:bg-amber-600 group-hover:text-white transition-all"><i data-lucide="git-branch" class="w-4 h-4"></i></div>
-                    <span class="text-sm font-semibold">Condition (IF)</span>
-                </button>
-                <button onclick="addNode('timer')" class="add-btn group">
-                    <div class="bg-slate-50 text-slate-600 p-2 rounded-lg group-hover:bg-slate-600 group-hover:text-white transition-all"><i data-lucide="clock" class="w-4 h-4"></i></div>
-                    <span class="text-sm font-semibold">Time Delay</span>
-                </button>
-                <button onclick="addNode('data')" class="add-btn group">
-                    <div class="bg-rose-50 text-rose-600 p-2 rounded-lg group-hover:bg-rose-600 group-hover:text-white transition-all"><i data-lucide="database" class="w-4 h-4"></i></div>
-                    <span class="text-sm font-semibold">Data Variable</span>
-                </button>
-            </div>
+    <!-- PROPERTIES PANEL -->
+    <aside id="node-editor" class="fixed right-8 top-24 bottom-8 w-80 bg-zinc-950 border border-zinc-900 rounded-[40px] shadow-2xl p-8 z-40 translate-x-[500px] transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)">
+        <div class="flex justify-between items-center mb-10">
+            <h3 class="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600 italic">Configuration</h3>
+            <button onclick="closeEditor()" class="p-2 hover:bg-zinc-900 rounded-full transition-colors"><i data-lucide="x" class="w-5 h-5 text-zinc-600"></i></button>
         </div>
-
-        <div class="mt-auto bg-slate-50 p-4 rounded-2xl border border-slate-100">
-            <p class="text-[10px] text-slate-400 font-bold uppercase mb-2">Editor Info</p>
-            <p class="text-[11px] leading-relaxed text-slate-500">
-                Click a node to select. Click another to <b>link/unlink</b>. Drag to move.
-            </p>
+        <div class="space-y-8">
+            <div>
+                <label class="text-[10px] font-black text-zinc-800 uppercase mb-3 block tracking-widest">Node Identity</label>
+                <input id="edit-title" onkeydown="handleEditorKeys(event)" type="text" class="w-full px-5 py-4 bg-zinc-900 border border-zinc-800 rounded-2xl outline-none font-black text-sm text-white focus:border-blue-600 transition-all shadow-inner">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-zinc-800 uppercase mb-3 block tracking-widest">Logic Code / Definition</label>
+                <textarea id="edit-desc" rows="6" onkeydown="handleEditorKeys(event)" class="w-full px-5 py-4 bg-zinc-900 border border-zinc-800 rounded-2xl outline-none text-xs font-semibold text-zinc-400 focus:border-blue-600 transition-all resize-none shadow-inner"></textarea>
+            </div>
+            <div id="color-picker" class="flex gap-3 flex-wrap"></div>
+        </div>
+        <div class="absolute bottom-10 left-10 right-10 flex flex-col gap-4">
+            <button onclick="closeEditor()" class="w-full py-4 bg-white text-black rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl">Process Updates</button>
+            <button onclick="deleteSelectedNode()" class="w-full py-2 text-zinc-800 text-[10px] font-black hover:text-red-500 transition-all uppercase tracking-widest">Destroy Node</button>
         </div>
     </aside>
 
-    <!-- Node Editor Panel -->
-    <aside id="node-editor" class="fixed right-8 top-24 bottom-8 w-80 bg-white border border-slate-200 rounded-3xl shadow-2xl p-8 z-40 translate-x-[450px] transition-transform duration-300">
-        <div class="flex items-center justify-between mb-8">
-            <h3 class="text-xl font-bold">Properties</h3>
-            <button onclick="closeEditor()" class="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-
-        <div class="space-y-6">
-            <div class="space-y-2">
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Action Name</label>
-                <input id="edit-title" type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 font-medium">
-            </div>
-            <div class="space-y-2">
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detailed Logic</label>
-                <textarea id="edit-desc" rows="5" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 resize-none text-sm leading-relaxed"></textarea>
-            </div>
-            <div class="space-y-2 pt-2">
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Theme Accent</label>
-                <div id="color-picker" class="flex gap-2.5">
-                    <!-- Colors dynamic -->
-                </div>
-            </div>
-        </div>
-
-        <div class="absolute bottom-8 left-8 right-8 flex gap-3">
-            <button onclick="deleteSelectedNode()" class="flex-1 px-4 py-3 border border-rose-100 text-rose-500 rounded-xl hover:bg-rose-50 text-xs font-bold transition-all flex items-center justify-center gap-2">
-                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-            </button>
-            <button onclick="closeEditor()" class="flex-1 px-4 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-xs font-bold transition-all">
-                Done
-            </button>
-        </div>
-    </aside>
-
-    <!-- Canvas -->
-    <main id="canvas-container" class="canvas-container" onmousedown="handleCanvasMouseDown(event)" onwheel="handleWheel(event)">
+    <!-- CANVAS -->
+    <main id="canvas-container" class="canvas-container" onmousedown="handleCanvasDown(event)" onwheel="handleWheel(event)" ondblclick="handleCanvasDblClick(event)">
         <div id="canvas-content" class="canvas-content">
-            <svg id="svg-layer" style="position: absolute; top: 0; left: 0; width: 10000px; height: 10000px; pointer-events: none;">
-                <defs>
-                    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orientation="auto">
-                        <path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8" />
-                    </marker>
-                </defs>
+            <svg id="svg-layer" style="position: absolute; top: 0; left: 0; width: 100000px; height: 100000px; pointer-events: none; z-index: 1;">
+                <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orientation="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#1d1d21" /></marker></defs>
             </svg>
-            <div id="nodes-container"></div>
+            <div id="nodes-container" style="position: relative; z-index: 2;"></div>
         </div>
     </main>
 
-    <!-- Export Modal -->
-    <div id="export-modal" class="fixed inset-0 z-[100] modal-overlay hidden flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div class="p-8 border-b border-slate-100 flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold">Export Project</h2>
-                    <p class="text-sm text-slate-400">Choose your preferred format below.</p>
-                </div>
-                <button onclick="hideExportModal()" class="p-2 hover:bg-slate-50 rounded-full text-slate-400"><i data-lucide="x" class="w-6 h-6"></i></button>
-            </div>
-            
-            <div class="p-8 flex-1 overflow-y-auto">
-                <div class="grid grid-cols-2 gap-6 mb-8">
-                    <button onclick="downloadJSON()" class="p-6 border-2 border-slate-100 rounded-2xl text-left hover:border-slate-900 hover:bg-slate-50 transition-all group">
-                        <div class="bg-slate-100 p-3 rounded-xl w-fit mb-4 group-hover:bg-slate-900 group-hover:text-white transition-all"><i data-lucide="code" class="w-6 h-6"></i></div>
-                        <h4 class="font-bold mb-1">Developer JSON</h4>
-                        <p class="text-xs text-slate-400">Full raw data with node positions and logic.</p>
-                    </button>
-                    <button onclick="copyFlowText()" class="p-6 border-2 border-slate-100 rounded-2xl text-left hover:border-slate-900 hover:bg-slate-50 transition-all group">
-                        <div class="bg-slate-100 p-3 rounded-xl w-fit mb-4 group-hover:bg-slate-900 group-hover:text-white transition-all"><i data-lucide="file-text" class="w-6 h-6"></i></div>
-                        <h4 class="font-bold mb-1">Logic Flow Text</h4>
-                        <p class="text-xs text-slate-400">Human-readable list of actions and connections.</p>
-                    </button>
-                </div>
-
-                <div class="bg-slate-900 rounded-2xl p-6 text-white overflow-hidden">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Live Preview</p>
-                    <pre id="export-preview" class="text-[11px] font-mono leading-relaxed opacity-80 whitespace-pre-wrap"></pre>
-                </div>
+    <!-- MODALS -->
+    <div id="import-modal" class="fixed inset-0 z-[100] modal-overlay hidden flex items-center justify-center p-6" onclick="if(event.target === this) toggleImportModal()">
+        <div class="bg-zinc-950 w-full max-w-xl rounded-[50px] border border-zinc-800 p-12 shadow-2xl">
+            <h2 class="text-3xl font-black italic tracking-tighter uppercase mb-2">Import Flow</h2>
+            <p class="text-sm text-zinc-600 mb-10 font-medium italic">Paste JSON flow code to sync with studio workspace.</p>
+            <textarea id="import-text" rows="10" placeholder='{"nodes": [...]}' class="w-full p-6 bg-black border border-zinc-800 rounded-3xl text-xs font-mono text-zinc-500 outline-none focus:border-blue-600 mb-10 shadow-inner"></textarea>
+            <div class="flex gap-4">
+                <button onclick="toggleImportModal()" class="flex-1 py-4 text-zinc-700 text-[11px] font-black uppercase tracking-widest">Cancel</button>
+                <button onclick="handleTextImport()" class="flex-1 py-4 bg-white text-black rounded-2xl text-[11px] font-black uppercase tracking-widest">Execute Sync</button>
             </div>
         </div>
     </div>
 
-    <style>
-        .add-btn {
-            @apply flex items-center gap-4 w-full p-3.5 rounded-2xl border border-slate-100 hover:border-slate-300 hover:shadow-sm transition-all text-left;
-        }
-    </style>
+    <div id="export-modal" class="fixed inset-0 z-[100] modal-overlay hidden flex items-center justify-center p-6" onclick="if(event.target === this) hideExportModal()">
+        <div class="bg-zinc-950 w-full max-w-3xl rounded-[50px] border border-zinc-800 flex flex-col max-h-[85vh] shadow-2xl">
+            <div class="p-12 border-b border-zinc-900 flex items-center justify-between">
+                <h2 class="text-2xl font-black italic uppercase tracking-tighter">Export Manifest</h2>
+                <button onclick="hideExportModal()"><i data-lucide="x" class="w-8 h-8 text-zinc-800"></i></button>
+            </div>
+            <div class="p-12 flex-1 overflow-y-auto thin-scroll">
+                <div class="grid grid-cols-2 gap-8 mb-12">
+                    <button onclick="downloadJSON()" class="p-8 border border-zinc-900 rounded-3xl text-left hover:border-white transition-all group">
+                        <h4 class="text-base font-black group-hover:text-blue-500 transition-colors uppercase italic">Download JSON</h4>
+                        <p class="text-[10px] text-zinc-700 font-black uppercase tracking-widest mt-2">Full Project Backup</p>
+                    </button>
+                    <button onclick="copyFlowText()" class="p-8 border border-zinc-900 rounded-3xl text-left hover:border-white transition-all group">
+                        <h4 class="text-base font-black group-hover:text-blue-500 transition-colors uppercase italic">Copy Flow Summary</h4>
+                        <p class="text-[10px] text-zinc-700 font-black uppercase tracking-widest mt-2">Documentation Format</p>
+                    </button>
+                </div>
+                <pre id="export-preview" class="bg-black text-zinc-600 p-10 rounded-3xl text-[13px] font-mono leading-relaxed border border-zinc-900"></pre>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // --- State ---
+        // --- Core Persistence ---
+        let projects = JSON.parse(localStorage.getItem('am_studio_final_v4') || '{}');
+        let currentProjectId = localStorage.getItem('am_active_id') || 'default';
+        
         let nodes = [];
         let connections = [];
-        let transform = { x: window.innerWidth / 2, y: window.innerHeight / 2, scale: 1 };
+        let transform = { x: window.innerWidth/2, y: 150, scale: 1 };
+        
         let isPanning = false;
         let startPos = { x: 0, y: 0 };
-        
-        let selectedNodeId = null;
-        let draggingNodeId = null;
-        let connectingNodeId = null; // Used for "click-to-connect" flow
-        let nodeOffset = { x: 0, y: 0 };
+        let selectedId = null;
+        let dragId = null;
+        let dragOffset = { x: 0, y: 0 };
+        let isLinkMode = false;
+        let linkSequence = [];
 
-        const THEMES = {
-            blue: '#3b82f6', indigo: '#6366f1', emerald: '#10b981', 
-            amber: '#f59e0b', rose: '#f43f5e', slate: '#475569'
-        };
+        const COLORS = { blue: '#3b82f6', emerald: '#10b981', purple: '#a855f7', orange: '#f97316', zinc: '#52525b', rose: '#f43f5e', amber: '#fbbf24', gray: '#334155' };
 
-        const canvas = document.getElementById('canvas-content');
-        const svgLayer = document.getElementById('svg-layer');
-        const nodesContainer = document.getElementById('nodes-container');
-
-        // --- Initialization ---
+        // --- Initialize Studio ---
         window.onload = () => {
             lucide.createIcons();
-            initColorPicker();
-            
-            const saved = localStorage.getItem('action_map_pro_v1');
-            if (saved) {
-                const data = JSON.parse(saved);
-                nodes = data.nodes || [];
-                connections = data.connections || [];
-                transform = data.transform || transform;
-            } else {
-                addNode('event', transform.x - 110, transform.y - 100);
+            initSidebarResize();
+            initColorPalette();
+            if (Object.keys(projects).length === 0) {
+                projects['default'] = { name: 'Main Logic Engine', nodes: [], connections: [], transform: { x: window.innerWidth/2, y: 150, scale: 1 }, updated: Date.now() };
             }
-            
-            updateCanvas();
-            renderNodes();
-            renderConnections();
-            
-            setInterval(autoSave, 15000);
+            loadProject(currentProjectId);
+            window.addEventListener('keydown', handleGlobalKeys);
         };
 
-        function initColorPicker() {
+        function initColorPalette() {
             const container = document.getElementById('color-picker');
-            Object.entries(THEMES).forEach(([name, hex]) => {
-                const btn = document.createElement('button');
-                btn.className = `w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-all`;
-                btn.style.backgroundColor = hex;
-                btn.onclick = () => updateNodeColor(hex);
-                container.appendChild(btn);
+            Object.values(COLORS).forEach(hex => {
+                const b = document.createElement('button');
+                b.className = "w-8 h-8 rounded-xl border border-zinc-800 transition-all hover:scale-110 hover:border-white";
+                b.style.backgroundColor = hex;
+                b.onclick = () => { if(selectedId) { nodes.find(n => n.id === selectedId).color = hex; renderNodes(); autoSave(); } };
+                container.appendChild(b);
             });
         }
 
-        // --- Core Rendering ---
-        function updateCanvas() {
-            canvas.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`;
-            document.getElementById('zoom-label').innerText = `${Math.round(transform.scale * 100)}%`;
+        function initSidebarResize() {
+            const sidebar = document.getElementById('sidebar');
+            const resizer = document.getElementById('sidebar-resizer');
+            let isResizing = false;
+            resizer.addEventListener('mousedown', (e) => { isResizing = true; document.body.style.cursor = 'col-resize'; });
+            window.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const newWidth = e.clientX - 24;
+                if (newWidth > 70 && newWidth < 450) sidebar.style.width = newWidth + 'px';
+            });
+            window.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = 'default'; });
         }
 
-        function renderNodes() {
-            nodesContainer.innerHTML = '';
-            nodes.forEach(node => {
-                const el = document.createElement('div');
-                let classes = `node bg-white rounded-3xl border-2 border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden`;
-                if (selectedNodeId === node.id) classes += ' node-active';
-                if (connectingNodeId === node.id) classes += ' node-connecting-source';
-                
-                el.className = classes;
-                el.style.left = node.x + 'px';
-                el.style.top = node.y + 'px';
-                el.id = node.id;
-                
-                el.innerHTML = `
-                    <div style="background-color: ${node.color}" class="h-1.5 w-full"></div>
-                    <div class="p-5">
-                        <div class="flex items-center gap-2.5 mb-2.5">
-                            <div class="p-1.5 rounded-lg bg-slate-50 text-slate-400">
-                                <i data-lucide="${getIcon(node.type)}" class="w-3.5 h-3.5"></i>
-                            </div>
-                            <h4 class="text-[13px] font-bold truncate leading-none">${node.title}</h4>
-                        </div>
-                        <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2 font-medium">${node.description}</p>
-                    </div>
-                `;
-
-                el.onmousedown = (e) => {
-                    e.stopPropagation();
-                    handleNodeClick(node.id, e);
-                };
-
-                nodesContainer.appendChild(el);
-            });
+        function toggleSidebarMinimize() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('minimized');
+            const icon = document.getElementById('minimize-icon');
+            icon.setAttribute('data-lucide', sidebar.classList.contains('minimized') ? 'chevron-right' : 'chevron-left');
             lucide.createIcons();
         }
 
-        // --- Node Interactions ---
-        function handleNodeClick(id, e) {
-            // Case 1: Starting a connection
-            if (connectingNodeId === null) {
-                connectingNodeId = id;
-                selectNode(id);
-                startDragging(e, id);
-            } 
-            // Case 2: Completing/Removing a connection
-            else {
-                if (connectingNodeId === id) {
-                    // Clicked same node again - cancel selection
-                    connectingNodeId = null;
-                } else {
-                    toggleConnection(connectingNodeId, id);
-                    connectingNodeId = null;
-                }
-            }
+        // --- Project Lifecycle ---
+        function loadProject(id) {
+            currentProjectId = id;
+            localStorage.setItem('am_active_id', id);
+            const p = projects[id] || projects['default'];
+            nodes = p.nodes || [];
+            connections = p.connections || [];
+            transform = p.transform || { x: window.innerWidth/2, y: 150, scale: 1 };
+            document.getElementById('active-project-name').innerText = p.name;
+            document.getElementById('dashboard-view').classList.add('hidden');
+            updateCanvasTransform();
             renderNodes();
-        }
-
-        function toggleConnection(from, to) {
-            const existingIdx = connections.findIndex(c => c.from === from && c.to === to);
-            if (existingIdx > -1) {
-                connections.splice(existingIdx, 1); // Unlink
-            } else {
-                connections.push({ from, to, id: `c_${Date.now()}` }); // Link
-            }
             renderConnections();
-            autoSave();
-        }
-
-        function renderConnections() {
-            svgLayer.innerHTML = `
-                <defs>
-                    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orientation="auto">
-                        <path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8" />
-                    </marker>
-                </defs>`;
-            
-            connections.forEach(conn => {
-                const from = nodes.find(n => n.id === conn.from);
-                const to = nodes.find(n => n.id === conn.to);
-                if (from && to) {
-                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                    const d = createSmoothPath(from.x + 110, from.y + 40, to.x + 110, to.y + 40);
-                    path.setAttribute("d", d);
-                    path.setAttribute("class", "connector-line");
-                    path.setAttribute("marker-end", "url(#arrowhead)");
-                    svgLayer.appendChild(path);
-                }
-            });
-        }
-
-        function createSmoothPath(x1, y1, x2, y2) {
-            // Calculate a horizontal curve
-            const dist = Math.abs(x1 - x2);
-            const cp1x = x1 + (x2 > x1 ? 100 : -100);
-            const cp2x = x2 + (x2 > x1 ? -100 : 100);
-            return `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
-        }
-
-        // --- Drag & Pan ---
-        function startDragging(e, id) {
-            draggingNodeId = id;
-            const node = nodes.find(n => n.id === id);
-            nodeOffset = {
-                x: e.clientX / transform.scale - node.x,
-                y: e.clientY / transform.scale - node.y
-            };
-            window.addEventListener('mousemove', onDragMove);
-            window.addEventListener('mouseup', onDragEnd);
-        }
-
-        function onDragMove(e) {
-            if (!draggingNodeId) return;
-            const node = nodes.find(n => n.id === draggingNodeId);
-            node.x = e.clientX / transform.scale - nodeOffset.x;
-            node.y = e.clientY / transform.scale - nodeOffset.y;
-            
-            const el = document.getElementById(draggingNodeId);
-            el.style.left = node.x + 'px';
-            el.style.top = node.y + 'px';
-            renderConnections();
-        }
-
-        function onDragEnd() {
-            draggingNodeId = null;
-            window.removeEventListener('mousemove', onDragMove);
-            window.removeEventListener('mouseup', onDragEnd);
-        }
-
-        function handleCanvasMouseDown(e) {
-            if (e.target.closest('.node')) return;
-            connectingNodeId = null; // Clear connection state on background click
-            selectNode(null);
-            renderNodes();
-            
-            isPanning = true;
-            startPos = { x: e.clientX - transform.x, y: e.clientY - transform.y };
-            window.addEventListener('mousemove', onCanvasPan);
-            window.addEventListener('mouseup', () => isPanning = false);
-        }
-
-        function onCanvasPan(e) {
-            if (!isPanning) return;
-            transform.x = e.clientX - startPos.x;
-            transform.y = e.clientY - startPos.y;
-            updateCanvas();
-        }
-
-        function handleWheel(e) {
-            e.preventDefault();
-            const factor = e.deltaY > 0 ? 0.9 : 1.1;
-            zoomCanvas(factor, e.clientX, e.clientY);
-        }
-
-        function zoomCanvas(factor, centerX = window.innerWidth/2, centerY = window.innerHeight/2) {
-            const newScale = Math.min(Math.max(transform.scale * factor, 0.2), 3);
-            const worldX = (centerX - transform.x) / transform.scale;
-            const worldY = (centerY - transform.y) / transform.scale;
-            transform.scale = newScale;
-            transform.x = centerX - worldX * transform.scale;
-            transform.y = centerY - worldY * transform.scale;
-            updateCanvas();
-        }
-
-        // --- Logic & Data ---
-        function addNode(type, x, y) {
-            const id = 'n_' + Date.now();
-            nodes.push({
-                id, type,
-                title: `${type.charAt(0).toUpperCase() + type.slice(1)} Action`,
-                description: 'Write specific details or logic steps here...',
-                x: x !== undefined ? x : (window.innerWidth / 2 - transform.x) / transform.scale - 110,
-                y: y !== undefined ? y : (window.innerHeight / 2 - transform.y) / transform.scale - 50,
-                color: THEMES[Object.keys(THEMES)[Math.floor(Math.random()*6)]]
-            });
-            renderNodes();
-            autoSave();
-        }
-
-        function selectNode(id) {
-            selectedNodeId = id;
-            if (id) {
-                const node = nodes.find(n => n.id === id);
-                document.getElementById('edit-title').value = node.title;
-                document.getElementById('edit-desc').value = node.description;
-                document.getElementById('node-editor').style.transform = 'translateX(0)';
-                
-                document.getElementById('edit-title').oninput = (e) => { node.title = e.target.value; renderNodes(); };
-                document.getElementById('edit-desc').oninput = (e) => { node.description = e.target.value; renderNodes(); };
-            } else {
-                document.getElementById('node-editor').style.transform = 'translateX(450px)';
-            }
-            renderNodes();
-        }
-
-        function closeEditor() {
-            selectNode(null);
-        }
-
-        function updateNodeColor(hex) {
-            if (!selectedNodeId) return;
-            nodes.find(n => n.id === selectedNodeId).color = hex;
-            renderNodes();
-            autoSave();
-        }
-
-        function deleteSelectedNode() {
-            if (!selectedNodeId) return;
-            nodes = nodes.filter(n => n.id !== selectedNodeId);
-            connections = connections.filter(c => c.from !== selectedNodeId && c.to !== selectedNodeId);
-            closeEditor();
-            renderConnections();
-        }
-
-        // --- Export ---
-        function showExportModal() {
-            document.getElementById('export-modal').classList.remove('hidden');
-            const flow = generateFlowText();
-            document.getElementById('export-preview').innerText = flow;
-            lucide.createIcons();
-        }
-
-        function hideExportModal() {
-            document.getElementById('export-modal').classList.add('hidden');
-        }
-
-        function generateFlowText() {
-            let text = "--- ACTION FLOW MAP ---\n\n";
-            nodes.forEach((node, i) => {
-                const outs = connections.filter(c => c.from === node.id).map(c => nodes.find(n => n.id === c.to)?.title);
-                text += `${i + 1}. [${node.type.toUpperCase()}] ${node.title}\n`;
-                text += `   Details: ${node.description}\n`;
-                if (outs.length) text += `   Next: ${outs.join(', ')}\n`;
-                text += `\n`;
-            });
-            return text;
-        }
-
-        function downloadJSON() {
-            const blob = new Blob([JSON.stringify({nodes, connections}, null, 2)], {type: 'application/json'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'action_map_config.json';
-            a.click();
-        }
-
-        function copyFlowText() {
-            const text = generateFlowText();
-            const el = document.createElement('textarea');
-            el.value = text;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            alert("Text Flow copied to clipboard!");
         }
 
         function autoSave() {
-            localStorage.setItem('action_map_pro_v1', JSON.stringify({nodes, connections, transform}));
+            if (!projects[currentProjectId]) return;
+            projects[currentProjectId] = {
+                name: document.getElementById('active-project-name').innerText,
+                nodes, connections, transform,
+                updated: Date.now()
+            };
+            localStorage.setItem('am_studio_final_v4', JSON.stringify(projects));
         }
 
-        function getIcon(type) {
-            const map = { website: 'globe', bot: 'bot', event: 'zap', condition: 'git-branch', timer: 'clock', data: 'database' };
-            return map[type] || 'circle';
+        function goToHome() {
+            const grid = document.getElementById('projects-grid');
+            grid.innerHTML = '';
+            Object.keys(projects).forEach(id => {
+                const p = projects[id];
+                const card = document.createElement('div');
+                card.className = "bg-zinc-950 p-10 rounded-[48px] border border-zinc-900 hover:border-white transition-all cursor-pointer group shadow-2xl";
+                card.onclick = () => loadProject(id);
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-8">
+                        <div class="p-4 bg-zinc-900 rounded-3xl group-hover:bg-blue-600 transition-all text-zinc-600 group-hover:text-white"><i data-lucide="box" class="w-8 h-8"></i></div>
+                        <button onclick="event.stopPropagation(); deleteProject('${id}')" class="text-zinc-800 hover:text-red-500"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    </div>
+                    <h4 class="text-xl font-black uppercase italic tracking-tighter text-white">${p.name}</h4>
+                    <p class="text-[10px] text-zinc-800 font-black uppercase mt-3 tracking-widest">${p.nodes.length} Elements • Updated ${new Date(p.updated).toLocaleDateString()}</p>
+                `;
+                grid.appendChild(card);
+            });
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function newProjectFlow() {
+            const name = prompt("Workspace Name:", "New Workflow");
+            if (!name) return;
+            const id = 'p_' + Date.now();
+            projects[id] = { name, nodes: [], connections: [], transform: { x: window.innerWidth/2, y: 150, scale: 1 }, updated: Date.now() };
+            loadProject(id);
+            autoSave();
+        }
+
+        function deleteProject(id) {
+            if (id === 'default') return alert("Protected Workspace.");
+            if(confirm("Confirm deletion?")) {
+                delete projects[id];
+                localStorage.setItem('am_studio_final_v4', JSON.stringify(projects));
+                if (currentProjectId === id) currentProjectId = 'default';
+                goToHome();
+            }
+        }
+
+        // --- Key Events ---
+        function handleGlobalKeys(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'h') {
+                e.preventDefault();
+                isLinkMode = !isLinkMode;
+                linkSequence = [];
+                document.getElementById('linking-toast').classList.toggle('hidden', !isLinkMode);
+                renderNodes();
+            }
+            if (e.key === 'Enter' && isLinkMode) confirmBatchLink();
+            if (e.key === 'Escape') {
+                isLinkMode = false; linkSequence = [];
+                document.getElementById('linking-toast').classList.add('hidden');
+                closeEditor(); renderNodes();
+            }
+            if (e.key === 'Backspace' || e.key === 'Delete') deleteSelectedNode();
+        }
+
+        function handleEditorKeys(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); closeEditor(); } }
+
+        // --- Linking ---
+        function handleNodeInteract(id, e) {
+            e.stopPropagation();
+            if (isLinkMode) {
+                const idx = linkSequence.indexOf(id);
+                if (idx > -1) linkSequence.splice(idx, 1);
+                else linkSequence.push(id);
+                renderNodes();
+            } else {
+                selectNode(id);
+                startNodeDrag(id, e);
+            }
+        }
+
+        function confirmBatchLink() {
+            if (linkSequence.length < 2) {
+                isLinkMode = false; linkSequence = [];
+                document.getElementById('linking-toast').classList.add('hidden');
+                renderNodes(); return;
+            }
+            for (let i = 0; i < linkSequence.length - 1; i++) {
+                const from = linkSequence[i]; const to = linkSequence[i+1];
+                const exists = connections.findIndex(c => c.from === from && c.to === to);
+                if (exists === -1) connections.push({ from, to });
+                else connections.splice(exists, 1);
+            }
+            isLinkMode = false; linkSequence = [];
+            document.getElementById('linking-toast').classList.add('hidden');
+            renderNodes(); renderConnections(); autoSave();
+        }
+
+        // --- Render Engine ---
+        function renderNodes() {
+            const container = document.getElementById('nodes-container');
+            if (!container) return;
+            container.innerHTML = '';
+            nodes.forEach(n => {
+                const el = document.createElement('div');
+                const lIdx = linkSequence.indexOf(n.id);
+                let cls = `node ${selectedId === n.id ? 'node-active' : ''} ${lIdx > -1 ? 'node-linking' : ''}`;
+                el.className = cls;
+                el.style.left = n.x + 'px';
+                el.style.top = n.y + 'px';
+                el.id = n.id;
+                el.innerHTML = `
+                    <div style="color: ${n.color || '#3b82f6'}"><i data-lucide="${n.icon || 'circle'}" class="w-4 h-4"></i></div>
+                    <span class="text-[11px] font-black uppercase tracking-tight whitespace-nowrap ml-3">${n.title}</span>
+                    ${lIdx > -1 ? `<div class="link-badge">${lIdx + 1}</div>` : ''}
+                `;
+                el.onmousedown = (e) => handleNodeInteract(n.id, e);
+                container.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        function renderConnections() {
+            const svg = document.getElementById('svg-layer');
+            if (!svg) return;
+            svg.innerHTML = `<defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orientation="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#1d1d21" /></marker></defs>`;
+            connections.forEach(c => {
+                const f = nodes.find(n => n.id === c.from);
+                const t = nodes.find(n => n.id === c.to);
+                if (f && t) {
+                    const x1 = f.x + 110, y1 = f.y + 40, x2 = t.x + 110, y2 = t.y;
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    const cpY = (y1 + y2) / 2;
+                    path.setAttribute("d", `M ${x1} ${y1} C ${x1} ${cpY}, ${x2} ${cpY}, ${x2} ${y2}`);
+                    path.setAttribute("class", "connector-line");
+                    path.setAttribute("marker-end", "url(#arrowhead)");
+                    svg.appendChild(path);
+                }
+            });
+        }
+
+        // --- Operations ---
+        function addNode(type, icon, title, x, y) {
+            const id = 'n_' + Date.now();
+            const wx = x || (window.innerWidth/2 - transform.x)/transform.scale - 110;
+            const wy = y || (window.innerHeight/2 - transform.y)/transform.scale - 20;
+            nodes.push({ id, type, icon, title, description: 'Enter logic...', x: wx, y: wy, color: COLORS.zinc });
+            renderNodes(); selectNode(id); autoSave();
+        }
+
+        function selectNode(id) {
+            selectedId = id; const n = nodes.find(n => n.id === id);
+            if (n) {
+                document.getElementById('edit-title').value = n.title;
+                document.getElementById('edit-desc').value = n.description;
+                document.getElementById('node-editor').style.transform = 'translateX(0)';
+                document.getElementById('edit-title').oninput = (e) => { n.title = e.target.value; renderNodes(); };
+                document.getElementById('edit-desc').oninput = (e) => { n.description = e.target.value; renderNodes(); };
+            } else closeEditor();
+            renderNodes();
+        }
+
+        function closeEditor() { selectedId = null; document.getElementById('node-editor').style.transform = 'translateX(500px)'; renderNodes(); autoSave(); }
+        function deleteSelectedNode() { if (!selectedId) return; nodes = nodes.filter(n => n.id !== selectedId); connections = connections.filter(c => c.from !== selectedId && c.to !== selectedId); closeEditor(); renderConnections(); }
+
+        // --- Canvas Motion ---
+        function updateCanvasTransform() {
+            const c = document.getElementById('canvas-content');
+            if (!c) return;
+            c.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`;
+            document.getElementById('zoom-label').innerText = Math.round(transform.scale * 100) + '%';
+        }
+        function handleWheel(e) { e.preventDefault(); const f = e.deltaY > 0 ? 0.94 : 1.06; zoomCanvas(f, e.clientX, e.clientY); }
+        function zoomCanvas(f, cx, cy) {
+            const ns = Math.min(Math.max(transform.scale * f, 0.1), 3);
+            const wx = (cx - transform.x) / transform.scale, wy = (cy - transform.y) / transform.scale;
+            transform.scale = ns; transform.x = cx - wx * ns; transform.y = cy - wy * ns; updateCanvasTransform();
+        }
+        function handleCanvasDown(e) {
+            if (e.target.closest('.node')) return;
+            isPanning = true; startPos = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+            window.addEventListener('mousemove', onCanvasPan);
+            window.addEventListener('mouseup', () => { isPanning = false; autoSave(); });
+        }
+        function onCanvasPan(e) { if (!isPanning) return; transform.x = e.clientX - startPos.x; transform.y = e.clientY - startPos.y; updateCanvasTransform(); }
+        function startNodeDrag(id, e) {
+            dragId = id; const n = nodes.find(n => n.id === id);
+            dragOffset = { x: e.clientX/transform.scale - n.x, y: e.clientY/transform.scale - n.y };
+            window.addEventListener('mousemove', onNodeDrag);
+            window.addEventListener('mouseup', () => { dragId = null; autoSave(); });
+        }
+        function onNodeDrag(e) {
+            if (!dragId) return; const n = nodes.find(n => n.id === dragId);
+            n.x = e.clientX/transform.scale - dragOffset.x; n.y = e.clientY/transform.scale - dragOffset.y;
+            const el = document.getElementById(dragId); if(el) { el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; renderConnections(); }
+        }
+        function handleCanvasDblClick(e) { if(e.target.closest('.node')) return; addNode('event', 'zap', 'Event Trigger', (e.clientX-transform.x)/transform.scale-110, (e.clientY-transform.y)/transform.scale-20); }
+
+        function spacizeLayout() {
+            if(!nodes.length) return;
+            const startNodes = nodes.filter(n => !connections.some(c => c.to === n.id));
+            const visited = new Set(), levels = {};
+            function traverse(id, level) {
+                if (visited.has(id)) return;
+                visited.add(id); if (!levels[level]) levels[level] = [];
+                levels[level].push(id);
+                connections.filter(c => c.from === id).forEach(c => traverse(c.to, level + 1));
+            }
+            startNodes.forEach(n => traverse(n.id, 0));
+            Object.keys(levels).forEach(l => {
+                const nInL = levels[l];
+                nInL.forEach((id, i) => { const n = nodes.find(node => node.id === id); n.x = (i * 260) - ((nInL.length - 1) * 130); n.y = l * 180; });
+            });
+            resetView(); renderNodes(); renderConnections(); autoSave();
+        }
+        function resetView() { transform = { x: window.innerWidth / 2, y: 150, scale: 1 }; updateCanvasTransform(); }
+
+        // --- IO & Manifest ---
+        function generateFlowText() {
+            let out = "ACTIONMAPPER FLOW EXPORT\n\n";
+            nodes.forEach((n, i) => {
+                const targets = connections.filter(c => c.from === n.id).map(c => nodes.find(x => x.id === c.to)?.title);
+                out += `[${i + 1}] ${n.type.toUpperCase()} "${n.title}"\nLogic:\n  ${n.description}\n`;
+                if(targets.length) out += `\nFlows To:\n  ${targets.join('\n  ')}\n`;
+                out += `\n`;
+            });
+            return out;
+        }
+        function showExportModal() { document.getElementById('export-modal').classList.remove('hidden'); document.getElementById('export-preview').innerText = generateFlowText(); }
+        function hideExportModal() { document.getElementById('export-modal').classList.add('hidden'); }
+        function toggleImportModal() { document.getElementById('import-modal').classList.toggle('hidden'); lucide.createIcons(); }
+        
+        function handleTextImport() {
+            try {
+                const d = JSON.parse(document.getElementById('import-text').value);
+                nodes = d.nodes || []; connections = d.connections || [];
+                resetView(); renderNodes(); renderConnections(); toggleImportModal(); autoSave();
+            } catch(e) { alert("Format Error: Invalid Workspace JSON."); }
+        }
+        function downloadJSON() {
+            const b = new Blob([JSON.stringify({nodes, connections}, null, 2)], {type:'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'workspace_export.json'; a.click();
+        }
+        function copyFlowText() {
+            const t = generateFlowText(); const el = document.createElement("textarea"); el.value = t;
+            document.body.appendChild(el); el.select();
+            try { document.execCommand('copy'); alert("Copied Manifest."); } catch (err) { alert("Manual copy required."); }
+            document.body.removeChild(el);
         }
     </script>
 </body>
