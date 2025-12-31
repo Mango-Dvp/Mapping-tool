@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActionMapper Pro | visual Planning Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow: hidden;
+            background-color: #f8fafc;
+        }
+
+        .canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            cursor: grab;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(#cbd5e1 0.8px, transparent 0.8px);
+            background-size: 24px 24px;
+        }
+
+        .canvas-container:active {
+            cursor: grabbing;
+        }
+
+        .canvas-content {
+            position: absolute;
+            transform-origin: 0 0;
+            transition: transform 0.05s linear;
+            will-change: transform;
+        }
+
+        .node {
+            position: absolute;
+            width: 220px;
+            user-select: none;
+            cursor: pointer;
+            z-index: 10;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+        }
+
+        .node:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .node-active {
+            outline: 3px solid #000;
+            box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .node-connecting-source {
+            outline: 3px solid #3b82f6;
+            animation: pulse-blue 1.5s infinite;
+        }
+
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.4); }
+            100% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        }
+
+        .connector-line {
+            fill: none;
+            stroke: #94a3b8;
+            stroke-width: 2;
+            pointer-events: none;
+            transition: stroke 0.3s;
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <!-- Header Navigation -->
+    <nav class="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 z-50">
+        <div class="flex items-center gap-4">
+            <div class="bg-slate-900 text-white p-2 rounded-xl shadow-lg shadow-slate-200">
+                <i data-lucide="layout-template" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold tracking-tight">ActionMapper Pro</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Workspace / Default</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="flex items-center bg-slate-100 rounded-lg p-1 mr-4">
+                <button onclick="zoomCanvas(0.9)" class="p-1.5 hover:bg-white rounded-md transition-all text-slate-500 hover:text-slate-900">
+                    <i data-lucide="minus" class="w-4 h-4"></i>
+                </button>
+                <span id="zoom-label" class="text-[11px] font-bold px-3 min-w-[50px] text-center text-slate-600">100%</span>
+                <button onclick="zoomCanvas(1.1)" class="p-1.5 hover:bg-white rounded-md transition-all text-slate-500 hover:text-slate-900">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <button onclick="showExportModal()" class="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
+                <i data-lucide="share-2" class="w-4 h-4"></i>
+                Finalize & Export
+            </button>
+        </div>
+    </nav>
+
+    <!-- Side Panel: Toolset -->
+    <aside class="fixed left-8 top-24 bottom-8 w-64 bg-white border border-slate-200 rounded-3xl shadow-xl shadow-slate-100 p-6 z-40 flex flex-col gap-8">
+        <div>
+            <h3 class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-5">System Actions</h3>
+            <div class="grid gap-2.5">
+                <button onclick="addNode('website')" class="add-btn group">
+                    <div class="bg-blue-50 text-blue-600 p-2 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-all"><i data-lucide="globe" class="w-4 h-4"></i></div>
+                    <span class="text-sm font-semibold">Web Interface</span>
+                </button>
+                <button onclick="addNode('bot')" class="add-btn group">
+                    <div class="bg-indigo-50 text-indigo-600 p-2 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-all"><i data-lucide="bot" class="w-4 h-4"></i></div>
+                    <span class="text-sm font-semibold">Automation Bot</span>
+                </button>
+                <button onclick="addNode('event')" class="add-btn group">
+                    <div class="bg-emerald-50 text-emerald-600 p-2 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-all"><i data-lucide="zap" class="w-4 h-4"></i></div>
+                    <span class="text-sm font-semibold">User Trigger</span>
+                </button>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-5">Logic & Data</h3>
+            <div class="grid gap-2.5">
+                <button onclick="addNode('condition')" class="add-btn group">
+                    <div class="bg-amber-50 text-amber-600 p-2 rounded-lg group-hover:bg-amber-600 group-hover:text-white transition-all"><i data-lucide="git-branch" class="w-4 h-4"></i></div>
+                    <span class="text-sm font-semibold">Condition (IF)</span>
+                </button>
+                <button onclick="addNode('timer')" class="add-btn group">
+                    <div class="bg-slate-50 text-slate-600 p-2 rounded-lg group-hover:bg-slate-600 group-hover:text-white transition-all"><i data-lucide="clock" class="w-4 h-4"></i></div>
+                    <span class="text-sm font-semibold">Time Delay</span>
+                </button>
+                <button onclick="addNode('data')" class="add-btn group">
+                    <div class="bg-rose-50 text-rose-600 p-2 rounded-lg group-hover:bg-rose-600 group-hover:text-white transition-all"><i data-lucide="database" class="w-4 h-4"></i></div>
+                    <span class="text-sm font-semibold">Data Variable</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-auto bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <p class="text-[10px] text-slate-400 font-bold uppercase mb-2">Editor Info</p>
+            <p class="text-[11px] leading-relaxed text-slate-500">
+                Click a node to select. Click another to <b>link/unlink</b>. Drag to move.
+            </p>
+        </div>
+    </aside>
+
+    <!-- Node Editor Panel -->
+    <aside id="node-editor" class="fixed right-8 top-24 bottom-8 w-80 bg-white border border-slate-200 rounded-3xl shadow-2xl p-8 z-40 translate-x-[450px] transition-transform duration-300">
+        <div class="flex items-center justify-between mb-8">
+            <h3 class="text-xl font-bold">Properties</h3>
+            <button onclick="closeEditor()" class="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="space-y-6">
+            <div class="space-y-2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Action Name</label>
+                <input id="edit-title" type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 font-medium">
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detailed Logic</label>
+                <textarea id="edit-desc" rows="5" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 resize-none text-sm leading-relaxed"></textarea>
+            </div>
+            <div class="space-y-2 pt-2">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Theme Accent</label>
+                <div id="color-picker" class="flex gap-2.5">
+                    <!-- Colors dynamic -->
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-8 left-8 right-8 flex gap-3">
+            <button onclick="deleteSelectedNode()" class="flex-1 px-4 py-3 border border-rose-100 text-rose-500 rounded-xl hover:bg-rose-50 text-xs font-bold transition-all flex items-center justify-center gap-2">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+            </button>
+            <button onclick="closeEditor()" class="flex-1 px-4 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 text-xs font-bold transition-all">
+                Done
+            </button>
+        </div>
+    </aside>
+
+    <!-- Canvas -->
+    <main id="canvas-container" class="canvas-container" onmousedown="handleCanvasMouseDown(event)" onwheel="handleWheel(event)">
+        <div id="canvas-content" class="canvas-content">
+            <svg id="svg-layer" style="position: absolute; top: 0; left: 0; width: 10000px; height: 10000px; pointer-events: none;">
+                <defs>
+                    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orientation="auto">
+                        <path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8" />
+                    </marker>
+                </defs>
+            </svg>
+            <div id="nodes-container"></div>
+        </div>
+    </main>
+
+    <!-- Export Modal -->
+    <div id="export-modal" class="fixed inset-0 z-[100] modal-overlay hidden flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold">Export Project</h2>
+                    <p class="text-sm text-slate-400">Choose your preferred format below.</p>
+                </div>
+                <button onclick="hideExportModal()" class="p-2 hover:bg-slate-50 rounded-full text-slate-400"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            
+            <div class="p-8 flex-1 overflow-y-auto">
+                <div class="grid grid-cols-2 gap-6 mb-8">
+                    <button onclick="downloadJSON()" class="p-6 border-2 border-slate-100 rounded-2xl text-left hover:border-slate-900 hover:bg-slate-50 transition-all group">
+                        <div class="bg-slate-100 p-3 rounded-xl w-fit mb-4 group-hover:bg-slate-900 group-hover:text-white transition-all"><i data-lucide="code" class="w-6 h-6"></i></div>
+                        <h4 class="font-bold mb-1">Developer JSON</h4>
+                        <p class="text-xs text-slate-400">Full raw data with node positions and logic.</p>
+                    </button>
+                    <button onclick="copyFlowText()" class="p-6 border-2 border-slate-100 rounded-2xl text-left hover:border-slate-900 hover:bg-slate-50 transition-all group">
+                        <div class="bg-slate-100 p-3 rounded-xl w-fit mb-4 group-hover:bg-slate-900 group-hover:text-white transition-all"><i data-lucide="file-text" class="w-6 h-6"></i></div>
+                        <h4 class="font-bold mb-1">Logic Flow Text</h4>
+                        <p class="text-xs text-slate-400">Human-readable list of actions and connections.</p>
+                    </button>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl p-6 text-white overflow-hidden">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Live Preview</p>
+                    <pre id="export-preview" class="text-[11px] font-mono leading-relaxed opacity-80 whitespace-pre-wrap"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .add-btn {
+            @apply flex items-center gap-4 w-full p-3.5 rounded-2xl border border-slate-100 hover:border-slate-300 hover:shadow-sm transition-all text-left;
+        }
+    </style>
+
+    <script>
+        // --- State ---
+        let nodes = [];
+        let connections = [];
+        let transform = { x: window.innerWidth / 2, y: window.innerHeight / 2, scale: 1 };
+        let isPanning = false;
+        let startPos = { x: 0, y: 0 };
+        
+        let selectedNodeId = null;
+        let draggingNodeId = null;
+        let connectingNodeId = null; // Used for "click-to-connect" flow
+        let nodeOffset = { x: 0, y: 0 };
+
+        const THEMES = {
+            blue: '#3b82f6', indigo: '#6366f1', emerald: '#10b981', 
+            amber: '#f59e0b', rose: '#f43f5e', slate: '#475569'
+        };
+
+        const canvas = document.getElementById('canvas-content');
+        const svgLayer = document.getElementById('svg-layer');
+        const nodesContainer = document.getElementById('nodes-container');
+
+        // --- Initialization ---
+        window.onload = () => {
+            lucide.createIcons();
+            initColorPicker();
+            
+            const saved = localStorage.getItem('action_map_pro_v1');
+            if (saved) {
+                const data = JSON.parse(saved);
+                nodes = data.nodes || [];
+                connections = data.connections || [];
+                transform = data.transform || transform;
+            } else {
+                addNode('event', transform.x - 110, transform.y - 100);
+            }
+            
+            updateCanvas();
+            renderNodes();
+            renderConnections();
+            
+            setInterval(autoSave, 15000);
+        };
+
+        function initColorPicker() {
+            const container = document.getElementById('color-picker');
+            Object.entries(THEMES).forEach(([name, hex]) => {
+                const btn = document.createElement('button');
+                btn.className = `w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-all`;
+                btn.style.backgroundColor = hex;
+                btn.onclick = () => updateNodeColor(hex);
+                container.appendChild(btn);
+            });
+        }
+
+        // --- Core Rendering ---
+        function updateCanvas() {
+            canvas.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`;
+            document.getElementById('zoom-label').innerText = `${Math.round(transform.scale * 100)}%`;
+        }
+
+        function renderNodes() {
+            nodesContainer.innerHTML = '';
+            nodes.forEach(node => {
+                const el = document.createElement('div');
+                let classes = `node bg-white rounded-3xl border-2 border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden`;
+                if (selectedNodeId === node.id) classes += ' node-active';
+                if (connectingNodeId === node.id) classes += ' node-connecting-source';
+                
+                el.className = classes;
+                el.style.left = node.x + 'px';
+                el.style.top = node.y + 'px';
+                el.id = node.id;
+                
+                el.innerHTML = `
+                    <div style="background-color: ${node.color}" class="h-1.5 w-full"></div>
+                    <div class="p-5">
+                        <div class="flex items-center gap-2.5 mb-2.5">
+                            <div class="p-1.5 rounded-lg bg-slate-50 text-slate-400">
+                                <i data-lucide="${getIcon(node.type)}" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <h4 class="text-[13px] font-bold truncate leading-none">${node.title}</h4>
+                        </div>
+                        <p class="text-[11px] text-slate-400 leading-relaxed line-clamp-2 font-medium">${node.description}</p>
+                    </div>
+                `;
+
+                el.onmousedown = (e) => {
+                    e.stopPropagation();
+                    handleNodeClick(node.id, e);
+                };
+
+                nodesContainer.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        // --- Node Interactions ---
+        function handleNodeClick(id, e) {
+            // Case 1: Starting a connection
+            if (connectingNodeId === null) {
+                connectingNodeId = id;
+                selectNode(id);
+                startDragging(e, id);
+            } 
+            // Case 2: Completing/Removing a connection
+            else {
+                if (connectingNodeId === id) {
+                    // Clicked same node again - cancel selection
+                    connectingNodeId = null;
+                } else {
+                    toggleConnection(connectingNodeId, id);
+                    connectingNodeId = null;
+                }
+            }
+            renderNodes();
+        }
+
+        function toggleConnection(from, to) {
+            const existingIdx = connections.findIndex(c => c.from === from && c.to === to);
+            if (existingIdx > -1) {
+                connections.splice(existingIdx, 1); // Unlink
+            } else {
+                connections.push({ from, to, id: `c_${Date.now()}` }); // Link
+            }
+            renderConnections();
+            autoSave();
+        }
+
+        function renderConnections() {
+            svgLayer.innerHTML = `
+                <defs>
+                    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orientation="auto">
+                        <path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8" />
+                    </marker>
+                </defs>`;
+            
+            connections.forEach(conn => {
+                const from = nodes.find(n => n.id === conn.from);
+                const to = nodes.find(n => n.id === conn.to);
+                if (from && to) {
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    const d = createSmoothPath(from.x + 110, from.y + 40, to.x + 110, to.y + 40);
+                    path.setAttribute("d", d);
+                    path.setAttribute("class", "connector-line");
+                    path.setAttribute("marker-end", "url(#arrowhead)");
+                    svgLayer.appendChild(path);
+                }
+            });
+        }
+
+        function createSmoothPath(x1, y1, x2, y2) {
+            // Calculate a horizontal curve
+            const dist = Math.abs(x1 - x2);
+            const cp1x = x1 + (x2 > x1 ? 100 : -100);
+            const cp2x = x2 + (x2 > x1 ? -100 : 100);
+            return `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
+        }
+
+        // --- Drag & Pan ---
+        function startDragging(e, id) {
+            draggingNodeId = id;
+            const node = nodes.find(n => n.id === id);
+            nodeOffset = {
+                x: e.clientX / transform.scale - node.x,
+                y: e.clientY / transform.scale - node.y
+            };
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+        }
+
+        function onDragMove(e) {
+            if (!draggingNodeId) return;
+            const node = nodes.find(n => n.id === draggingNodeId);
+            node.x = e.clientX / transform.scale - nodeOffset.x;
+            node.y = e.clientY / transform.scale - nodeOffset.y;
+            
+            const el = document.getElementById(draggingNodeId);
+            el.style.left = node.x + 'px';
+            el.style.top = node.y + 'px';
+            renderConnections();
+        }
+
+        function onDragEnd() {
+            draggingNodeId = null;
+            window.removeEventListener('mousemove', onDragMove);
+            window.removeEventListener('mouseup', onDragEnd);
+        }
+
+        function handleCanvasMouseDown(e) {
+            if (e.target.closest('.node')) return;
+            connectingNodeId = null; // Clear connection state on background click
+            selectNode(null);
+            renderNodes();
+            
+            isPanning = true;
+            startPos = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+            window.addEventListener('mousemove', onCanvasPan);
+            window.addEventListener('mouseup', () => isPanning = false);
+        }
+
+        function onCanvasPan(e) {
+            if (!isPanning) return;
+            transform.x = e.clientX - startPos.x;
+            transform.y = e.clientY - startPos.y;
+            updateCanvas();
+        }
+
+        function handleWheel(e) {
+            e.preventDefault();
+            const factor = e.deltaY > 0 ? 0.9 : 1.1;
+            zoomCanvas(factor, e.clientX, e.clientY);
+        }
+
+        function zoomCanvas(factor, centerX = window.innerWidth/2, centerY = window.innerHeight/2) {
+            const newScale = Math.min(Math.max(transform.scale * factor, 0.2), 3);
+            const worldX = (centerX - transform.x) / transform.scale;
+            const worldY = (centerY - transform.y) / transform.scale;
+            transform.scale = newScale;
+            transform.x = centerX - worldX * transform.scale;
+            transform.y = centerY - worldY * transform.scale;
+            updateCanvas();
+        }
+
+        // --- Logic & Data ---
+        function addNode(type, x, y) {
+            const id = 'n_' + Date.now();
+            nodes.push({
+                id, type,
+                title: `${type.charAt(0).toUpperCase() + type.slice(1)} Action`,
+                description: 'Write specific details or logic steps here...',
+                x: x !== undefined ? x : (window.innerWidth / 2 - transform.x) / transform.scale - 110,
+                y: y !== undefined ? y : (window.innerHeight / 2 - transform.y) / transform.scale - 50,
+                color: THEMES[Object.keys(THEMES)[Math.floor(Math.random()*6)]]
+            });
+            renderNodes();
+            autoSave();
+        }
+
+        function selectNode(id) {
+            selectedNodeId = id;
+            if (id) {
+                const node = nodes.find(n => n.id === id);
+                document.getElementById('edit-title').value = node.title;
+                document.getElementById('edit-desc').value = node.description;
+                document.getElementById('node-editor').style.transform = 'translateX(0)';
+                
+                document.getElementById('edit-title').oninput = (e) => { node.title = e.target.value; renderNodes(); };
+                document.getElementById('edit-desc').oninput = (e) => { node.description = e.target.value; renderNodes(); };
+            } else {
+                document.getElementById('node-editor').style.transform = 'translateX(450px)';
+            }
+            renderNodes();
+        }
+
+        function closeEditor() {
+            selectNode(null);
+        }
+
+        function updateNodeColor(hex) {
+            if (!selectedNodeId) return;
+            nodes.find(n => n.id === selectedNodeId).color = hex;
+            renderNodes();
+            autoSave();
+        }
+
+        function deleteSelectedNode() {
+            if (!selectedNodeId) return;
+            nodes = nodes.filter(n => n.id !== selectedNodeId);
+            connections = connections.filter(c => c.from !== selectedNodeId && c.to !== selectedNodeId);
+            closeEditor();
+            renderConnections();
+        }
+
+        // --- Export ---
+        function showExportModal() {
+            document.getElementById('export-modal').classList.remove('hidden');
+            const flow = generateFlowText();
+            document.getElementById('export-preview').innerText = flow;
+            lucide.createIcons();
+        }
+
+        function hideExportModal() {
+            document.getElementById('export-modal').classList.add('hidden');
+        }
+
+        function generateFlowText() {
+            let text = "--- ACTION FLOW MAP ---\n\n";
+            nodes.forEach((node, i) => {
+                const outs = connections.filter(c => c.from === node.id).map(c => nodes.find(n => n.id === c.to)?.title);
+                text += `${i + 1}. [${node.type.toUpperCase()}] ${node.title}\n`;
+                text += `   Details: ${node.description}\n`;
+                if (outs.length) text += `   Next: ${outs.join(', ')}\n`;
+                text += `\n`;
+            });
+            return text;
+        }
+
+        function downloadJSON() {
+            const blob = new Blob([JSON.stringify({nodes, connections}, null, 2)], {type: 'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'action_map_config.json';
+            a.click();
+        }
+
+        function copyFlowText() {
+            const text = generateFlowText();
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert("Text Flow copied to clipboard!");
+        }
+
+        function autoSave() {
+            localStorage.setItem('action_map_pro_v1', JSON.stringify({nodes, connections, transform}));
+        }
+
+        function getIcon(type) {
+            const map = { website: 'globe', bot: 'bot', event: 'zap', condition: 'git-branch', timer: 'clock', data: 'database' };
+            return map[type] || 'circle';
+        }
+    </script>
+</body>
+</html>
