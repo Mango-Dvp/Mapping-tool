@@ -43,8 +43,10 @@
             position: absolute;
             transform-origin: 0 0;
             will-change: transform;
-            width: 1px;
-            height: 1px;
+            width: 0px;
+            height: 0px;
+            top: 0;
+            left: 0;
         }
 
         /* Sleek Node Style */
@@ -62,7 +64,7 @@
             min-width: 180px;
             user-select: none;
             cursor: pointer;
-            z-index: 10;
+            z-index: 100;
         }
 
         .node:hover {
@@ -73,7 +75,7 @@
         .node-active {
             border-color: var(--accent);
             box-shadow: 0 0 15px rgba(88, 101, 242, 0.25);
-            z-index: 20;
+            z-index: 200;
         }
 
         .node-linking {
@@ -104,13 +106,13 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
-        /* SVG Connections - Fixed rendering logic */
+        /* SVG Connections - Robust Rendering */
         #svg-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: -100000px;
+            left: -100000px;
+            width: 200000px;
+            height: 200000px;
             pointer-events: none;
             overflow: visible;
             z-index: 1;
@@ -119,8 +121,8 @@
         .connector-line {
             fill: none;
             stroke: #5865f2;
-            stroke-opacity: 0.6;
-            stroke-width: 2.5;
+            stroke-opacity: 0.8;
+            stroke-width: 3;
             pointer-events: none;
             stroke-linecap: round;
         }
@@ -130,7 +132,7 @@
             width: 100%;
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 10px 14px;
             color: #fff;
             font-size: 13px;
@@ -255,7 +257,7 @@
         </div>
         
         <div id="sidebar-content" class="flex-1 overflow-y-auto thin-scroll p-4 pt-0">
-            <!-- Populated by script -->
+            <!-- Dynamic Content -->
         </div>
         
         <div class="mt-auto p-6 border-t border-zinc-900 bg-black/40">
@@ -360,7 +362,7 @@
     <div id="export-modal" class="fixed inset-0 z-[100] modal-overlay hidden flex items-center justify-center p-6" onclick="if(event.target === this) hideExportModal()">
         <div class="bg-zinc-900 w-full max-w-4xl rounded-[64px] border border-zinc-800 flex flex-col max-h-[85vh] shadow-2xl">
             <div class="p-12 border-b border-zinc-800 flex items-center justify-between">
-                <h2 class="text-2xl font-bold text-white tracking-tight">Project manifest build</h2>
+                <h2 class="text-2xl font-bold text-white tracking-tight italic">Project manifest build</h2>
                 <button onclick="hideExportModal()"><i data-lucide="x" class="w-8 h-8 text-zinc-700"></i></button>
             </div>
             <div class="p-12 flex-1 overflow-y-auto thin-scroll">
@@ -460,7 +462,8 @@
         function closeEditor() { 
             selectedId = null; 
             document.getElementById('node-editor').style.transform = 'translateX(500px)'; 
-            renderNodes(); autoSave(); 
+            renderNodes(); 
+            autoSave(); 
         }
 
         function toggleCustomModal() { document.getElementById('custom-modal').classList.toggle('hidden'); }
@@ -547,7 +550,7 @@ Return ONLY the JSON block.`;
         function autoSave() {
             if (!projects[currentProjectId]) return;
             projects[currentProjectId] = { name: "Main Build", nodes, connections, transform, updated: Date.now() };
-            localStorage.setItem('am_studio_manifest_v26', JSON.stringify(projects));
+            localStorage.setItem('am_studio_v25', JSON.stringify(projects));
         }
 
         function goToHome() { loadProject(currentProjectId); showMessage("Workspace synced."); }
@@ -606,11 +609,13 @@ Return ONLY the JSON block.`;
         function renderConnections() {
             const svg = document.getElementById('svg-layer');
             if (!svg) return;
+            // Draw relative indigo lines inside the scaled workspace
             svg.innerHTML = `<defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orientation="auto"><path d="M0,0 L10,3.5 L0,7 Z" fill="#5865f2" /></marker></defs>`;
             connections.forEach(c => {
                 const f = nodes.find(n => n.id === c.from), t = nodes.find(n => n.id === c.to);
                 if (f && t) {
-                    const x1 = f.x + 90, y1 = f.y + 20, x2 = t.x + 90, y2 = t.y;
+                    const offset = 200000;
+                    const x1 = f.x + 90 + offset, y1 = f.y + 19 + offset, x2 = t.x + 90 + offset, y2 = t.y + offset;
                     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                     const cpY = (y1 + y2) / 2;
                     path.setAttribute("d", `M ${x1} ${y1} C ${x1} ${cpY}, ${x2} ${cpY}, ${x2} ${y2}`);
